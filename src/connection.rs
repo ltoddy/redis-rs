@@ -1,22 +1,26 @@
 use std::io::{BufRead, BufReader, Write};
 use std::net::{TcpStream, ToSocketAddrs};
 
+use crate::client::Command;
 use crate::error::Error;
 use crate::Result;
-use crate::ToRedisArgs;
+
+const SINGLE_STRINGS: u8 = b'+';
+const ERRORS: u8 = b'-';
+const INTEGERS: u8 = b':';
+const BULK_STRINGS: u8 = b'$';
+const ARRAYS: u8 = b'*';
 
 pub struct Connection {
-    conn: TcpStream,
-    reader: BufReader<TcpStream>,
+    pub conn: TcpStream,
+    pub reader: BufReader<TcpStream>,
 }
 
 impl Connection {
     pub fn new(stream: TcpStream) -> Result<Connection> {
         let reader = BufReader::new(stream.try_clone()?);
 
-        let conn = Connection { conn: stream, reader };
-
-        Ok(conn)
+        Ok(Connection { conn: stream, reader })
     }
 
     pub fn connect<A: ToSocketAddrs>(addr: A) -> Result<Connection> {
@@ -25,9 +29,10 @@ impl Connection {
         Self::new(stream)
     }
 
-    pub fn send<Args: ToRedisArgs>(&mut self, args: Args) -> Result<()> {
-        let buf = args.to_redis_args();
-        self.conn.write_all(&buf)?;
+    // pub fn execute() -> Result<Reply> {}
+
+    pub fn send(&mut self, cmd: Command) -> Result<()> {
+        self.conn.write_all(cmd.as_slice())?;
         Ok(())
     }
 
@@ -40,7 +45,11 @@ impl Connection {
         let buffer = &buffer[0..buffer.len() - 2];
 
         let reply = match buffer[0] {
-            b'+' => Reply::SingleStrings(String::from_utf8_lossy(&buffer[1..]).to_owned().to_string()),
+            SINGLE_STRINGS => Reply::SingleStrings(String::from_utf8_lossy(&buffer[1..]).to_string()),
+            ERRORS => Reply::Errors(String::from_utf8_lossy(&buffer[1..]).to_string()),
+            INTEGERS => todo!(),
+            BULK_STRINGS => todo!(),
+            ARRAYS => todo!(),
 
             _ => unreachable!(),
         };
@@ -52,7 +61,7 @@ impl Connection {
 #[derive(Debug)]
 pub enum Reply {
     SingleStrings(String),
-    Errors(Error),
+    Errors(String),
     Integers(i64),
     BulkStrings(Vec<String>),
     Arrays(Vec<Reply>),

@@ -32,7 +32,22 @@ impl ConnectionPool {
         Connection::connect(&self.addr)
     }
 
-    // pub fn put_conn(conn: Connection) {
-    //     todo!()
-    // }
+    pub fn put(&mut self, conn: Connection) {
+        if self.closed {
+            return;
+        }
+
+        if self.idles.len() >= self.capacity {
+            let _ = self.idles.pop_front();
+        }
+        self.idles.push_back(conn);
+    }
+
+    pub fn close(&mut self) {
+        self.closed = true;
+
+        while let Some(conn) = self.idles.pop_front() {
+            drop(conn);
+        }
+    }
 }
