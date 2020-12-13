@@ -5,18 +5,18 @@ use crate::client::Command;
 use crate::error::Error;
 use crate::Result;
 
-const SINGLE_STRINGS: u8 = b'+';
-const ERRORS: u8 = b'-';
-const INTEGERS: u8 = b':';
-const BULK_STRINGS: u8 = b'$';
-const ARRAYS: u8 = b'*';
-
 pub struct Connection {
     pub conn: TcpStream,
     pub reader: BufReader<TcpStream>,
 }
 
 impl Connection {
+    const SINGLE_STRINGS: u8 = b'+';
+    const ERRORS: u8 = b'-';
+    const INTEGERS: u8 = b':';
+    const BULK_STRINGS: u8 = b'$';
+    const ARRAYS: u8 = b'*';
+
     pub fn new(stream: TcpStream) -> Result<Connection> {
         let reader = BufReader::new(stream.try_clone()?);
 
@@ -29,14 +29,18 @@ impl Connection {
         Self::new(stream)
     }
 
-    // pub fn execute() -> Result<Reply> {}
+    pub fn execute(&mut self, cmd: Command) -> Result<Reply> {
+        self.send(cmd)?;
+        self.receive()
+    }
 
-    pub fn send(&mut self, cmd: Command) -> Result<()> {
-        self.conn.write_all(cmd.as_slice())?;
+    fn send(&mut self, cmd: Command) -> Result<()> {
+        let send_data = cmd.to_vec();
+        self.conn.write_all(&send_data)?;
         Ok(())
     }
 
-    pub fn receive(&mut self) -> Result<Reply> {
+    fn receive(&mut self) -> Result<Reply> {
         let mut buffer = Vec::new();
         self.reader.read_until(b'\n', &mut buffer)?;
         if buffer.is_empty() {
@@ -45,11 +49,11 @@ impl Connection {
         let buffer = &buffer[0..buffer.len() - 2];
 
         let reply = match buffer[0] {
-            SINGLE_STRINGS => Reply::SingleStrings(String::from_utf8_lossy(&buffer[1..]).to_string()),
-            ERRORS => Reply::Errors(String::from_utf8_lossy(&buffer[1..]).to_string()),
-            INTEGERS => todo!(),
-            BULK_STRINGS => todo!(),
-            ARRAYS => todo!(),
+            Self::SINGLE_STRINGS => Reply::SingleStrings(String::from_utf8_lossy(&buffer[1..]).to_string()),
+            Self::ERRORS => Reply::Errors(String::from_utf8_lossy(&buffer[1..]).to_string()),
+            Self::INTEGERS => todo!(),
+            Self::BULK_STRINGS => todo!(),
+            Self::ARRAYS => todo!(),
 
             _ => unreachable!(),
         };

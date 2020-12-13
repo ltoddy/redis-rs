@@ -3,23 +3,29 @@ use crate::redis_serialization_protocol::RedisSerializationProtocol;
 use crate::Result;
 
 pub struct Command {
-    data: Vec<u8>,
+    cmd: String,
+    args: Vec<u8>,
+    count: usize,
 }
 
 impl Command {
-    pub fn new<T: RedisSerializationProtocol>(cmd: T) -> Command {
-        let mut data = Vec::new();
-        data.extend_from_slice(cmd.serialization().as_slice());
-        Command { data }
+    pub fn new(cmd: String) -> Command {
+        let mut args = Vec::new();
+        args.extend_from_slice(cmd.serialization().as_slice());
+        Command { cmd, args, count: 1 }
     }
 
     pub fn arg<T: RedisSerializationProtocol>(&mut self, arg: T) -> &mut Self {
-        self.data.extend_from_slice(arg.serialization().as_slice());
+        self.args.extend_from_slice(arg.serialization().as_slice());
+        self.count += 1;
         self
     }
 
-    pub fn as_slice(&self) -> &[u8] {
-        self.data.as_slice()
+    pub fn to_vec(&self) -> Vec<u8> {
+        let mut buf = Vec::new();
+        buf.extend_from_slice(format!("*{}\r\n", self.count).as_bytes());
+        buf.extend_from_slice(&self.args);
+        buf
     }
 }
 
@@ -36,25 +42,29 @@ impl RedisClient {
 
     pub fn ping(&mut self) -> Result<()> {
         let mut conn = self.pool.get()?;
-
-        let cmd = Command::new("PING");
-        conn.send(cmd)?;
-        let reply = conn.receive()?;
-        println!("reply -> {:?}", reply);
-
+        let cmd = Command::new(String::from("PING"));
+        conn.execute(cmd)?;
         self.pool.put(conn);
-
         Ok(())
     }
 
-    pub fn set(key: String, value: String, ex: u64, px: u64, nx: bool, xx: bool) {
-        let mut cmd = Command::new("SET");
+    pub fn set(&mut self, key: String, value: String, ex: u64, px: u64, nx: bool, xx: bool) -> Result<()> {
+        let mut cmd = Command::new(String::from("SET"));
         cmd.arg(key).arg(value);
         if ex > 0 {
-            cmd.arg(ex);
+            cmd.arg("EX").arg(ex);
         }
         if px > 0 {
-            cmd.arg(px);
+            cmd.arg("PX").arg(px);
         }
+        if nx {
+            cmd.arg("XX");
+        } else if xx {
+            cmd.arg("NX");
+        }
+        let mut conn = self.pool.get()?;
+        conn.execute(cmd)?;
+
+        Ok(())
     }
 }
