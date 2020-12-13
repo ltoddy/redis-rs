@@ -1,5 +1,5 @@
 use crate::pool::ConnectionPool;
-use crate::redis_serialization_protocol::RedisSerializationProtocol;
+use crate::protocol::RedisSerializationProtocol;
 use crate::Result;
 
 pub struct Command {
@@ -10,8 +10,7 @@ pub struct Command {
 
 impl Command {
     pub fn new(cmd: String) -> Command {
-        let mut args = Vec::new();
-        args.extend_from_slice(cmd.serialization().as_slice());
+        let args = Vec::new();
         Command { cmd, args, count: 1 }
     }
 
@@ -24,6 +23,7 @@ impl Command {
     pub fn to_vec(&self) -> Vec<u8> {
         let mut buf = Vec::new();
         buf.extend_from_slice(format!("*{}\r\n", self.count).as_bytes());
+        buf.extend_from_slice(self.cmd.serialization().as_slice());
         buf.extend_from_slice(&self.args);
         buf
     }
@@ -66,5 +66,19 @@ impl RedisClient {
         conn.execute(cmd)?;
 
         Ok(())
+    }
+
+    pub fn get<T, U>(&mut self, key: T) -> Result<U>
+    where
+        T: RedisSerializationProtocol,
+        U: RedisSerializationProtocol,
+    {
+        let mut cmd = Command::new(String::from("GET"));
+        cmd.arg(key);
+
+        let mut conn = self.pool.get()?;
+        let reply = conn.execute(cmd)?;
+        self.pool.put(conn);
+        U::deserialization(reply)
     }
 }

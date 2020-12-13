@@ -1,4 +1,4 @@
-use std::io::{BufRead, BufReader, Write};
+use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{TcpStream, ToSocketAddrs};
 
 use crate::client::Command;
@@ -49,10 +49,13 @@ impl Connection {
         let buffer = &buffer[0..buffer.len() - 2];
 
         let reply = match buffer[0] {
-            Self::SINGLE_STRINGS => Reply::SingleStrings(String::from_utf8_lossy(&buffer[1..]).to_string()),
-            Self::ERRORS => Reply::Errors(String::from_utf8_lossy(&buffer[1..]).to_string()),
+            Self::SINGLE_STRINGS => Reply::new(ReplyKind::SingleStrings, Vec::from(&buffer[1..])),
+            Self::ERRORS => Reply::new(ReplyKind::Errors, Vec::from(&buffer[1..])),
             Self::INTEGERS => todo!(),
-            Self::BULK_STRINGS => todo!(),
+            Self::BULK_STRINGS => Reply::new(
+                ReplyKind::BulkStrings,
+                self.read_bulk(String::from_utf8_lossy(&buffer[1..]).parse::<usize>()?)?,
+            ),
             Self::ARRAYS => todo!(),
 
             _ => unreachable!(),
@@ -60,13 +63,31 @@ impl Connection {
 
         Ok(reply)
     }
+
+    fn read_bulk(&mut self, size: usize) -> Result<Vec<u8>> {
+        let mut buf = vec![0; size];
+        self.reader.read_exact(&mut buf)?;
+        Ok(buf)
+    }
 }
 
 #[derive(Debug)]
-pub enum Reply {
-    SingleStrings(String),
-    Errors(String),
-    Integers(i64),
-    BulkStrings(Vec<String>),
-    Arrays(Vec<Reply>),
+pub enum ReplyKind {
+    SingleStrings,
+    Errors,
+    Integers,
+    BulkStrings,
+    Arrays,
+}
+
+#[derive(Debug)]
+pub struct Reply {
+    pub kind: ReplyKind,
+    pub data: Vec<u8>,
+}
+
+impl Reply {
+    pub fn new(kind: ReplyKind, data: Vec<u8>) -> Self {
+        Reply { kind, data }
+    }
 }

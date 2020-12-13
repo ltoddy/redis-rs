@@ -1,7 +1,13 @@
+use crate::connection::Reply;
+use crate::connection::ReplyKind;
+use crate::Result;
+
 pub trait RedisSerializationProtocol {
     fn serialization(&self) -> Vec<u8>;
 
-    fn deserialization<Output>(_data: Vec<u8>) -> Output;
+    fn deserialization(reply: Reply) -> Result<Self>
+    where
+        Self: Sized;
 }
 
 // TODO: use macro
@@ -15,7 +21,7 @@ impl RedisSerializationProtocol for &str {
         buf
     }
 
-    fn deserialization<Output>(_data: Vec<u8>) -> Output {
+    fn deserialization(_reply: Reply) -> Result<Self> {
         unimplemented!()
     }
 }
@@ -30,8 +36,18 @@ impl RedisSerializationProtocol for String {
         buf
     }
 
-    fn deserialization<Output>(_data: Vec<u8>) -> Output {
-        unimplemented!()
+    // TODO
+    fn deserialization(reply: Reply) -> Result<Self> {
+        let Reply { kind, data } = reply;
+
+        match kind {
+            ReplyKind::SingleStrings => return Ok(String::from_utf8(data)?),
+            ReplyKind::BulkStrings => return Ok(String::from_utf8(data)?),
+
+            _ => "",
+        };
+
+        Ok(String::new())
     }
 }
 
@@ -46,7 +62,7 @@ impl RedisSerializationProtocol for i64 {
         buf
     }
 
-    fn deserialization<Output>(_data: Vec<u8>) -> Output {
+    fn deserialization(_reply: Reply) -> Result<Self> {
         unimplemented!()
     }
 }
@@ -62,7 +78,7 @@ impl RedisSerializationProtocol for u64 {
         buf
     }
 
-    fn deserialization<Output>(_data: Vec<u8>) -> Output {
+    fn deserialization(_reply: Reply) -> Result<Self> {
         unimplemented!()
     }
 }
@@ -77,7 +93,7 @@ impl RedisSerializationProtocol for Vec<u8> {
         buf
     }
 
-    fn deserialization<Output>(_data: Vec<u8>) -> Output {
+    fn deserialization(_reply: Reply) -> Result<Self> {
         unimplemented!()
     }
 }
@@ -93,7 +109,7 @@ impl RedisSerializationProtocol for f32 {
         buf
     }
 
-    fn deserialization<Output>(_data: Vec<u8>) -> Output {
+    fn deserialization(_reply: Reply) -> Result<Self> {
         unimplemented!()
     }
 }
@@ -109,7 +125,7 @@ impl RedisSerializationProtocol for f64 {
         buf
     }
 
-    fn deserialization<Output>(_data: Vec<u8>) -> Output {
+    fn deserialization(_reply: Reply) -> Result<Self> {
         unimplemented!()
     }
 }
