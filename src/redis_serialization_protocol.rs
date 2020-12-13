@@ -10,7 +10,8 @@ impl RedisSerializationProtocol for &str {
         let mut buf = Vec::new();
         buf.extend_from_slice(b"*1\r\n");
         buf.extend_from_slice(format!("${}\r\n", length).as_bytes());
-        buf.extend_from_slice(format!("{}\r\n", self).as_bytes());
+        buf.extend_from_slice(self.as_bytes());
+        buf.extend_from_slice(b"\r\n");
         buf
     }
 
@@ -25,7 +26,8 @@ impl RedisSerializationProtocol for String {
         let mut buf = Vec::new();
         buf.extend_from_slice(b"*1\r\n");
         buf.extend_from_slice(format!("${}\r\n", length).as_bytes());
-        buf.extend_from_slice(format!("{}\r\n", self).as_bytes());
+        buf.extend_from_slice(self.as_bytes());
+        buf.extend_from_slice(b"\r\n");
         buf
     }
 
