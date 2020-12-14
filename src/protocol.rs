@@ -2,16 +2,19 @@ use crate::connection::Reply;
 use crate::connection::ReplyKind;
 use crate::Result;
 
-pub trait RedisSerializationProtocol {
+pub trait Serialization {
     fn serialization(&self) -> Vec<u8>;
+}
 
+pub trait Deserialization {
     fn deserialization(reply: Reply) -> Result<Self>
     where
         Self: Sized;
 }
 
-// TODO: use macro
-impl RedisSerializationProtocol for &str {
+pub trait RedisSerializationProtocol: Serialization + Deserialization {}
+
+impl Serialization for String {
     fn serialization(&self) -> Vec<u8> {
         let length = self.len();
         let mut buf = Vec::new();
@@ -19,24 +22,10 @@ impl RedisSerializationProtocol for &str {
         buf.extend_from_slice(self.as_bytes());
         buf.extend_from_slice(b"\r\n");
         buf
-    }
-
-    fn deserialization(_reply: Reply) -> Result<Self> {
-        unimplemented!()
     }
 }
 
-impl RedisSerializationProtocol for String {
-    fn serialization(&self) -> Vec<u8> {
-        let length = self.len();
-        let mut buf = Vec::new();
-        buf.extend_from_slice(format!("${}\r\n", length).as_bytes());
-        buf.extend_from_slice(self.as_bytes());
-        buf.extend_from_slice(b"\r\n");
-        buf
-    }
-
-    // TODO
+impl Deserialization for String {
     fn deserialization(reply: Reply) -> Result<Self> {
         let Reply { kind, data } = reply;
 
@@ -51,7 +40,20 @@ impl RedisSerializationProtocol for String {
     }
 }
 
-impl RedisSerializationProtocol for i64 {
+impl RedisSerializationProtocol for String {}
+
+impl Serialization for &str {
+    fn serialization(&self) -> Vec<u8> {
+        let length = self.len();
+        let mut buf = Vec::new();
+        buf.extend_from_slice(format!("${}\r\n", length).as_bytes());
+        buf.extend_from_slice(self.as_bytes());
+        buf.extend_from_slice(b"\r\n");
+        buf
+    }
+}
+
+impl Serialization for i64 {
     fn serialization(&self) -> Vec<u8> {
         let s = format!("{}", self);
         let length = s.len();
@@ -61,13 +63,17 @@ impl RedisSerializationProtocol for i64 {
         buf.extend_from_slice(b"\r\n");
         buf
     }
+}
 
+impl Deserialization for i64 {
     fn deserialization(_reply: Reply) -> Result<Self> {
         unimplemented!()
     }
 }
 
-impl RedisSerializationProtocol for u64 {
+impl RedisSerializationProtocol for i64 {}
+
+impl Serialization for u64 {
     fn serialization(&self) -> Vec<u8> {
         let s = format!("{}", self);
         let length = s.len();
@@ -77,13 +83,17 @@ impl RedisSerializationProtocol for u64 {
         buf.extend_from_slice(b"\r\n");
         buf
     }
+}
 
+impl Deserialization for u64 {
     fn deserialization(_reply: Reply) -> Result<Self> {
         unimplemented!()
     }
 }
 
-impl RedisSerializationProtocol for Vec<u8> {
+impl RedisSerializationProtocol for u64 {}
+
+impl Serialization for Vec<u8> {
     fn serialization(&self) -> Vec<u8> {
         let length = self.len();
         let mut buf = Vec::new();
@@ -92,13 +102,17 @@ impl RedisSerializationProtocol for Vec<u8> {
         buf.extend_from_slice(b"\r\n");
         buf
     }
+}
 
+impl Deserialization for Vec<u8> {
     fn deserialization(_reply: Reply) -> Result<Self> {
         unimplemented!()
     }
 }
 
-impl RedisSerializationProtocol for f32 {
+impl RedisSerializationProtocol for Vec<u8> {}
+
+impl Serialization for f32 {
     fn serialization(&self) -> Vec<u8> {
         let s = format!("{}", self);
         let length = s.len();
@@ -108,13 +122,17 @@ impl RedisSerializationProtocol for f32 {
         buf.extend_from_slice(b"\r\n");
         buf
     }
+}
 
+impl Deserialization for f32 {
     fn deserialization(_reply: Reply) -> Result<Self> {
         unimplemented!()
     }
 }
 
-impl RedisSerializationProtocol for f64 {
+impl RedisSerializationProtocol for f32 {}
+
+impl Serialization for f64 {
     fn serialization(&self) -> Vec<u8> {
         let s = format!("{}", self);
         let length = s.len();
@@ -124,11 +142,15 @@ impl RedisSerializationProtocol for f64 {
         buf.extend_from_slice(b"\r\n");
         buf
     }
+}
 
+impl Deserialization for f64 {
     fn deserialization(_reply: Reply) -> Result<Self> {
         unimplemented!()
     }
 }
+
+impl RedisSerializationProtocol for f64 {}
 
 #[cfg(test)]
 pub mod tests {

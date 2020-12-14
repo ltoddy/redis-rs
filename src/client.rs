@@ -1,5 +1,5 @@
 use crate::pool::ConnectionPool;
-use crate::protocol::RedisSerializationProtocol;
+use crate::protocol::{Deserialization, Serialization};
 use crate::Result;
 
 pub struct Command {
@@ -14,7 +14,7 @@ impl Command {
         Command { cmd, args, count: 1 }
     }
 
-    pub fn arg<T: RedisSerializationProtocol>(&mut self, arg: T) -> &mut Self {
+    pub fn arg<T: Serialization>(&mut self, arg: T) -> &mut Self {
         self.args.extend_from_slice(arg.serialization().as_slice());
         self.count += 1;
         self
@@ -48,7 +48,11 @@ impl RedisClient {
         Ok(())
     }
 
-    pub fn set(&mut self, key: String, value: String, ex: u64, px: u64, nx: bool, xx: bool) -> Result<()> {
+    pub fn set<Key, Value>(&mut self, key: Key, value: Value, ex: u64, px: u64, nx: bool, xx: bool) -> Result<()>
+    where
+        Key: Serialization,
+        Value: Serialization,
+    {
         let mut cmd = Command::new(String::from("SET"));
         cmd.arg(key).arg(value);
         if ex > 0 {
@@ -68,10 +72,10 @@ impl RedisClient {
         Ok(())
     }
 
-    pub fn get<T, U>(&mut self, key: T) -> Result<U>
+    pub fn get<Key, Value>(&mut self, key: Key) -> Result<Value>
     where
-        T: RedisSerializationProtocol,
-        U: RedisSerializationProtocol,
+        Key: Serialization,
+        Value: Deserialization,
     {
         let mut cmd = Command::new(String::from("GET"));
         cmd.arg(key);
@@ -79,6 +83,6 @@ impl RedisClient {
         let mut conn = self.pool.get()?;
         let reply = conn.execute(cmd)?;
         self.pool.put(conn);
-        U::deserialization(reply)
+        Value::deserialization(reply)
     }
 }
