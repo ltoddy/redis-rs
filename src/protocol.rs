@@ -1,5 +1,6 @@
 use crate::connection::Reply;
 use crate::connection::ReplyKind;
+use crate::error::Error;
 use crate::Result;
 
 pub trait Serialization {
@@ -86,8 +87,12 @@ impl Serialization for u64 {
 }
 
 impl Deserialization for u64 {
-    fn deserialization(_reply: Reply) -> Result<Self> {
-        unimplemented!()
+    fn deserialization(reply: Reply) -> Result<Self> {
+        let Reply { kind, data } = reply;
+        match kind {
+            ReplyKind::Integers => Ok(String::from_utf8(data)?.parse::<u64>()?),
+            _ => Err(Error::ParseRedisReply(format!(""))),
+        }
     }
 }
 
@@ -157,7 +162,7 @@ pub mod tests {
     use super::*;
 
     #[test]
-    pub fn test_vector() {
+    pub fn test_vector_serialization() {
         let data = b"Hello world".to_vec();
 
         let got = data.serialization();
@@ -167,7 +172,7 @@ pub mod tests {
     }
 
     #[test]
-    pub fn test_string() {
+    pub fn test_string_serialization() {
         let s = String::from("Hello world");
 
         let got = s.serialization();
@@ -179,7 +184,7 @@ pub mod tests {
     }
 
     #[test]
-    pub fn test_u64() {
+    pub fn test_u64_serialization() {
         let num: u64 = 132;
 
         let got = num.serialization();
@@ -189,7 +194,17 @@ pub mod tests {
     }
 
     #[test]
-    pub fn test_i64() {
+    pub fn test_u64_deserialization() {
+        let reply = Reply::new(ReplyKind::Integers, vec![54, 48]);
+
+        let got = <u64>::deserialization(reply).unwrap();
+
+        let expected = 60_u64;
+        assert_eq!(expected, got);
+    }
+
+    #[test]
+    pub fn test_i64_serialization() {
         let num: i64 = -321;
 
         let got = num.serialization();
@@ -199,7 +214,7 @@ pub mod tests {
     }
 
     #[test]
-    pub fn test_f32() {
+    pub fn test_f32_serialization() {
         let fnum: f32 = -1.23;
 
         let got = fnum.serialization();
@@ -209,7 +224,7 @@ pub mod tests {
     }
 
     #[test]
-    pub fn test_f64() {
+    pub fn test_f64_serialization() {
         let fnum: f64 = -1.23;
 
         let got = fnum.serialization();

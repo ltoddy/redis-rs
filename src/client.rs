@@ -33,6 +33,12 @@ pub struct RedisClient {
     pool: ConnectionPool,
 }
 
+impl Default for RedisClient {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl RedisClient {
     pub fn new() -> RedisClient {
         RedisClient {
@@ -46,6 +52,19 @@ impl RedisClient {
         conn.execute(cmd)?;
         self.pool.put(conn);
         Ok(())
+    }
+
+    pub fn append<Key, Value>(&mut self, key: Key, value: Value) -> Result<u64>
+    where
+        Key: Serialization,
+        Value: Serialization,
+    {
+        let mut cmd = Command::new(String::from("APPEND"));
+        cmd.arg(key).arg(value);
+
+        let mut conn = self.pool.get()?;
+        let reply = conn.execute(cmd)?;
+        <u64>::deserialization(reply)
     }
 
     pub fn set<Key, Value>(&mut self, key: Key, value: Value, ex: u64, px: u64, nx: bool, xx: bool) -> Result<()>
@@ -83,6 +102,6 @@ impl RedisClient {
         let mut conn = self.pool.get()?;
         let reply = conn.execute(cmd)?;
         self.pool.put(conn);
-        Value::deserialization(reply)
+        <Value>::deserialization(reply)
     }
 }
