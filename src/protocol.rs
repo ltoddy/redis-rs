@@ -67,8 +67,12 @@ impl Serialization for i64 {
 }
 
 impl Deserialization for i64 {
-    fn deserialization(_reply: Reply) -> Result<Self> {
-        unimplemented!()
+    fn deserialization(reply: Reply) -> Result<Self> {
+        let Reply { kind, data } = reply;
+        match kind {
+            ReplyKind::Integers | ReplyKind::BulkStrings => Ok(String::from_utf8(data)?.parse::<i64>()?),
+            _ => Err(Error::ParseRedisReply(format!(""))),
+        }
     }
 }
 
@@ -90,7 +94,7 @@ impl Deserialization for u64 {
     fn deserialization(reply: Reply) -> Result<Self> {
         let Reply { kind, data } = reply;
         match kind {
-            ReplyKind::Integers => Ok(String::from_utf8(data)?.parse::<u64>()?),
+            ReplyKind::Integers | ReplyKind::BulkStrings => Ok(String::from_utf8(data)?.parse::<u64>()?),
             _ => Err(Error::ParseRedisReply(format!(""))),
         }
     }

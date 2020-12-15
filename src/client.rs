@@ -93,6 +93,21 @@ impl RedisClient {
         <u64>::deserialization(reply)
     }
 
+    /// Decrements the number stored at key by one.
+    pub fn decr<Key>(&mut self, key: Key) -> Result<i64>
+    where
+        Key: Serialization,
+    {
+        let mut cmd = Command::new("DECR");
+        cmd.arg(key);
+
+        let mut conn = self.pool.get()?;
+        let reply = conn.execute(cmd)?;
+        self.pool.put(conn);
+
+        <i64>::deserialization(reply)
+    }
+
     pub fn set<Key, Value>(&mut self, key: Key, value: Value, ex: u64, px: u64, nx: bool, xx: bool) -> Result<()>
     where
         Key: Serialization,
