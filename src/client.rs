@@ -188,6 +188,21 @@ impl RedisClient {
         String::deserialization(reply)
     }
 
+    /// Increments the number stored at key by one.
+    pub fn incr<K>(&mut self, key: K) -> Result<i64>
+    where
+        K: Serialization,
+    {
+        let mut cmd = Command::new("INCR");
+        cmd.arg(key);
+
+        let mut conn = self.pool.get()?;
+        let reply = conn.execute(cmd)?;
+        self.pool.put(conn);
+
+        i64::deserialization(reply)
+    }
+
     pub fn set<K, V>(&mut self, key: K, value: V, ex: u64, px: u64, nx: bool, xx: bool) -> Result<()>
     where
         K: Serialization,

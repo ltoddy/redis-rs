@@ -59,7 +59,7 @@ impl Deserialization for u8 {
         let Reply { kind, data } = reply;
         match kind {
             ReplyKind::Integers => Ok(String::from_utf8(data)?.parse::<u8>()?),
-            _ => Err(Error::ParseRedisReply(format!(""))),
+            _ => Err(Error::ParseRedisReply(String::from_utf8(data)?)),
         }
     }
 }
@@ -81,7 +81,7 @@ impl Deserialization for i64 {
         let Reply { kind, data } = reply;
         match kind {
             ReplyKind::Integers | ReplyKind::BulkStrings => Ok(String::from_utf8(data)?.parse::<i64>()?),
-            _ => Err(Error::ParseRedisReply(format!(""))),
+            _ => Err(Error::ParseRedisReply(String::from_utf8(data)?)),
         }
     }
 }
@@ -105,7 +105,7 @@ impl Deserialization for u64 {
         let Reply { kind, data } = reply;
         match kind {
             ReplyKind::Integers | ReplyKind::BulkStrings => Ok(String::from_utf8(data)?.parse::<u64>()?),
-            _ => Err(Error::ParseRedisReply(format!(""))),
+            _ => Err(Error::ParseRedisReply(String::from_utf8(data)?)),
         }
     }
 }
