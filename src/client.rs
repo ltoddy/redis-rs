@@ -155,6 +155,21 @@ impl RedisClient {
         <u8>::deserialization(reply)
     }
 
+    /// Returns the substring of the string value stored at key, determined by the offsets start and end (both are inclusive).
+    pub fn getrange<K>(&mut self, key: K, start: i64, end: i64) -> Result<String>
+    where
+        K: Serialization,
+    {
+        let mut cmd = Command::new("GETRANGE");
+        cmd.arg(key).arg(start).arg(end);
+
+        let mut conn = self.pool.get()?;
+        let reply = conn.execute(cmd)?;
+        self.pool.put(conn);
+
+        String::deserialization(reply)
+    }
+
     pub fn set<K, V>(&mut self, key: K, value: V, ex: u64, px: u64, nx: bool, xx: bool) -> Result<()>
     where
         K: Serialization,
