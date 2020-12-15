@@ -129,6 +129,7 @@ impl RedisClient {
         K: Serialization,
         V: Deserialization,
     {
+        // TODO: use Result<Option<>>
         let mut cmd = Command::new("GET");
         cmd.arg(key);
 
@@ -162,6 +163,23 @@ impl RedisClient {
     {
         let mut cmd = Command::new("GETRANGE");
         cmd.arg(key).arg(start).arg(end);
+
+        let mut conn = self.pool.get()?;
+        let reply = conn.execute(cmd)?;
+        self.pool.put(conn);
+
+        String::deserialization(reply)
+    }
+
+    /// Atomically sets key to value and returns the old value stored at key.
+    pub fn getset<K, V>(&mut self, key: K, value: V) -> Result<String>
+    where
+        K: Serialization,
+        V: ToString,
+    {
+        // TODO: use Result<Option<>>
+        let mut cmd = Command::new("GETSET");
+        cmd.arg(key).arg(value.to_string());
 
         let mut conn = self.pool.get()?;
         let reply = conn.execute(cmd)?;
