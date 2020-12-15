@@ -54,6 +54,16 @@ impl Serialization for &str {
     }
 }
 
+impl Deserialization for u8 {
+    fn deserialization(reply: Reply) -> Result<Self> {
+        let Reply { kind, data } = reply;
+        match kind {
+            ReplyKind::Integers => Ok(String::from_utf8(data)?.parse::<u8>()?),
+            _ => Err(Error::ParseRedisReply(format!(""))),
+        }
+    }
+}
+
 impl Serialization for i64 {
     fn serialization(&self) -> Vec<u8> {
         let s = format!("{}", self);

@@ -139,6 +139,22 @@ impl RedisClient {
         <V>::deserialization(reply)
     }
 
+    /// Returns the bit value at offset in the string value stored at key.
+    pub fn getbit<K>(&mut self, key: K, offset: i64) -> Result<u8>
+    where
+        K: Serialization,
+    {
+        let mut cmd = Command::new("GETBIT");
+        cmd.arg(key);
+        cmd.arg(offset);
+
+        let mut conn = self.pool.get()?;
+        let reply = conn.execute(cmd)?;
+        self.pool.put(conn);
+
+        <u8>::deserialization(reply)
+    }
+
     pub fn set<K, V>(&mut self, key: K, value: V, ex: u64, px: u64, nx: bool, xx: bool) -> Result<()>
     where
         K: Serialization,
