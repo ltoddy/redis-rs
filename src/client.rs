@@ -203,6 +203,21 @@ impl RedisClient {
         i64::deserialization(reply)
     }
 
+    /// Increments the number stored at key by increment.
+    pub fn incrby<K>(&mut self, key: K, increment: i64) -> Result<i64>
+    where
+        K: Serialization,
+    {
+        let mut cmd = Command::new("INCRBY");
+        cmd.arg(key).arg(increment);
+
+        let mut conn = self.pool.get()?;
+        let reply = conn.execute(cmd)?;
+        self.pool.put(conn);
+
+        i64::deserialization(reply)
+    }
+
     pub fn set<K, V>(&mut self, key: K, value: V, ex: u64, px: u64, nx: bool, xx: bool) -> Result<()>
     where
         K: Serialization,
