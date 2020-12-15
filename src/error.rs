@@ -3,6 +3,7 @@ pub enum Error {
     Io(std::io::Error),
     Resp,
 
+    KeyNotFound,
     RedisError(String),
     ParseRedisReply(String),
     ConnectionPoolClosed,
@@ -15,6 +16,8 @@ impl std::fmt::Display for Error {
         match self {
             Error::Io(e) => write!(f, "{}", e),
             Error::Resp => write!(f, "wrong Redis serialization protocol format"),
+
+            Error::KeyNotFound => write!(f, "key not found"),
             Error::RedisError(s) => write!(f, "{}", s),
             Error::ConnectionPoolClosed => write!(f, "connection pool closed"),
             Error::ParseRedisReply(s) => write!(f, "parse redis failed: {}", s),

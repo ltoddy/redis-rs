@@ -123,6 +123,22 @@ impl RedisClient {
         <i64>::deserialization(reply)
     }
 
+    /// Get the value of key.
+    pub fn get<K, V>(&mut self, key: K) -> Result<V>
+    where
+        K: Serialization,
+        V: Deserialization,
+    {
+        let mut cmd = Command::new("GET");
+        cmd.arg(key);
+
+        let mut conn = self.pool.get()?;
+        let reply = conn.execute(cmd)?;
+        self.pool.put(conn);
+
+        <V>::deserialization(reply)
+    }
+
     pub fn set<K, V>(&mut self, key: K, value: V, ex: u64, px: u64, nx: bool, xx: bool) -> Result<()>
     where
         K: Serialization,
@@ -147,20 +163,5 @@ impl RedisClient {
         self.pool.put(conn);
 
         Ok(())
-    }
-
-    pub fn get<K, V>(&mut self, key: K) -> Result<V>
-    where
-        K: Serialization,
-        V: Deserialization,
-    {
-        let mut cmd = Command::new("GET");
-        cmd.arg(key);
-
-        let mut conn = self.pool.get()?;
-        let reply = conn.execute(cmd)?;
-        self.pool.put(conn);
-
-        <V>::deserialization(reply)
     }
 }

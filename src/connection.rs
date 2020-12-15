@@ -54,7 +54,7 @@ impl Connection {
             Self::INTEGERS => Reply::new(ReplyKind::Integers, Vec::from(&buffer[1..])),
             Self::BULK_STRINGS => Reply::new(
                 ReplyKind::BulkStrings,
-                self.read_bulk(String::from_utf8_lossy(&buffer[1..]).parse::<usize>()?)?,
+                self.read_bulk(String::from_utf8_lossy(&buffer[1..]).parse::<i64>()?)?,
             ),
             Self::ARRAYS => todo!(),
 
@@ -64,8 +64,13 @@ impl Connection {
         Ok(reply)
     }
 
-    fn read_bulk(&mut self, size: usize) -> Result<Vec<u8>> {
-        let mut buf = vec![0; size];
+    fn read_bulk(&mut self, size: i64) -> Result<Vec<u8>> {
+        if size < 0 {
+            // return -1 when 'GET' an not exist key, raw data is: "$-1"
+            return Err(Error::KeyNotFound);
+        }
+
+        let mut buf = vec![0; size as usize];
         self.reader.read_exact(&mut buf)?;
         Ok(buf)
     }
