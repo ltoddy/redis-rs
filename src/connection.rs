@@ -51,7 +51,7 @@ impl Connection {
         let reply = match buffer[0] {
             Self::SINGLE_STRINGS => Reply::new(ReplyKind::SingleStrings, Vec::from(&buffer[1..])),
             Self::ERRORS => Reply::new(ReplyKind::Errors, Vec::from(&buffer[1..])),
-            Self::INTEGERS => Reply::new(ReplyKind::Integers, buffer[1..].to_vec()),
+            Self::INTEGERS => Reply::new(ReplyKind::Integers, Vec::from(&buffer[1..])),
             Self::BULK_STRINGS => Reply::new(
                 ReplyKind::BulkStrings,
                 self.read_bulk(String::from_utf8_lossy(&buffer[1..]).parse::<usize>()?)?,

@@ -9,7 +9,8 @@ pub struct Command {
 }
 
 impl Command {
-    pub fn new(cmd: String) -> Command {
+    pub fn new<S: ToString>(cmd: S) -> Command {
+        let cmd = cmd.to_string();
         let args = Vec::new();
         Command { cmd, args, count: 1 }
     }
@@ -47,10 +48,12 @@ impl RedisClient {
     }
 
     pub fn ping(&mut self) -> Result<()> {
+        let cmd = Command::new("PING");
+
         let mut conn = self.pool.get()?;
-        let cmd = Command::new(String::from("PING"));
-        conn.execute(cmd)?;
+        let _ = conn.execute(cmd)?;
         self.pool.put(conn);
+
         Ok(())
     }
 
@@ -59,11 +62,34 @@ impl RedisClient {
         Key: Serialization,
         Value: Serialization,
     {
-        let mut cmd = Command::new(String::from("APPEND"));
+        let mut cmd = Command::new("APPEND");
         cmd.arg(key).arg(value);
 
         let mut conn = self.pool.get()?;
         let reply = conn.execute(cmd)?;
+        self.pool.put(conn);
+
+        <u64>::deserialization(reply)
+    }
+
+    /// Count the number of set bits (population counting) in a string.
+    pub fn bitcount<Key>(&mut self, key: Key, start: Option<i64>, end: Option<i64>) -> Result<u64>
+    where
+        Key: Serialization,
+    {
+        let mut cmd = Command::new("BITCOUNT");
+        cmd.arg(key);
+        if let Some(start) = start {
+            cmd.arg(start);
+        }
+        if let Some(end) = end {
+            cmd.arg(end);
+        }
+
+        let mut conn = self.pool.get()?;
+        let reply = conn.execute(cmd)?;
+        self.pool.put(conn);
+
         <u64>::deserialization(reply)
     }
 
@@ -72,7 +98,7 @@ impl RedisClient {
         Key: Serialization,
         Value: Serialization,
     {
-        let mut cmd = Command::new(String::from("SET"));
+        let mut cmd = Command::new("SET");
         cmd.arg(key).arg(value);
         if ex > 0 {
             cmd.arg("EX").arg(ex);
@@ -85,8 +111,10 @@ impl RedisClient {
         } else if xx {
             cmd.arg("NX");
         }
+
         let mut conn = self.pool.get()?;
-        conn.execute(cmd)?;
+        let _ = conn.execute(cmd)?;
+        self.pool.put(conn);
 
         Ok(())
     }
@@ -96,12 +124,13 @@ impl RedisClient {
         Key: Serialization,
         Value: Deserialization,
     {
-        let mut cmd = Command::new(String::from("GET"));
+        let mut cmd = Command::new("GET");
         cmd.arg(key);
 
         let mut conn = self.pool.get()?;
         let reply = conn.execute(cmd)?;
         self.pool.put(conn);
+
         <Value>::deserialization(reply)
     }
 }
