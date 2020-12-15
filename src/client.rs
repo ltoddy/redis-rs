@@ -57,10 +57,10 @@ impl RedisClient {
         Ok(())
     }
 
-    pub fn append<Key, Value>(&mut self, key: Key, value: Value) -> Result<u64>
+    pub fn append<K, V>(&mut self, key: K, value: V) -> Result<u64>
     where
-        Key: Serialization,
-        Value: Serialization,
+        K: Serialization,
+        V: Serialization,
     {
         let mut cmd = Command::new("APPEND");
         cmd.arg(key).arg(value);
@@ -73,9 +73,9 @@ impl RedisClient {
     }
 
     /// Count the number of set bits (population counting) in a string.
-    pub fn bitcount<Key>(&mut self, key: Key, start: Option<i64>, end: Option<i64>) -> Result<u64>
+    pub fn bitcount<K>(&mut self, key: K, start: Option<i64>, end: Option<i64>) -> Result<u64>
     where
-        Key: Serialization,
+        K: Serialization,
     {
         let mut cmd = Command::new("BITCOUNT");
         cmd.arg(key);
@@ -94,9 +94,9 @@ impl RedisClient {
     }
 
     /// Decrements the number stored at key by one.
-    pub fn decr<Key>(&mut self, key: Key) -> Result<i64>
+    pub fn decr<K>(&mut self, key: K) -> Result<i64>
     where
-        Key: Serialization,
+        K: Serialization,
     {
         let mut cmd = Command::new("DECR");
         cmd.arg(key);
@@ -108,10 +108,25 @@ impl RedisClient {
         <i64>::deserialization(reply)
     }
 
-    pub fn set<Key, Value>(&mut self, key: Key, value: Value, ex: u64, px: u64, nx: bool, xx: bool) -> Result<()>
+    /// Decrements the number stored at key by decrement.
+    pub fn decrby<K>(&mut self, key: K, decrement: i64) -> Result<i64>
     where
-        Key: Serialization,
-        Value: Serialization,
+        K: Serialization,
+    {
+        let mut cmd = Command::new("DECRBY");
+        cmd.arg(key).arg(decrement);
+
+        let mut conn = self.pool.get()?;
+        let reply = conn.execute(cmd)?;
+        self.pool.put(conn);
+
+        <i64>::deserialization(reply)
+    }
+
+    pub fn set<K, V>(&mut self, key: K, value: V, ex: u64, px: u64, nx: bool, xx: bool) -> Result<()>
+    where
+        K: Serialization,
+        V: Serialization,
     {
         let mut cmd = Command::new("SET");
         cmd.arg(key).arg(value);
@@ -134,10 +149,10 @@ impl RedisClient {
         Ok(())
     }
 
-    pub fn get<Key, Value>(&mut self, key: Key) -> Result<Value>
+    pub fn get<K, V>(&mut self, key: K) -> Result<V>
     where
-        Key: Serialization,
-        Value: Deserialization,
+        K: Serialization,
+        V: Deserialization,
     {
         let mut cmd = Command::new("GET");
         cmd.arg(key);
@@ -146,6 +161,6 @@ impl RedisClient {
         let reply = conn.execute(cmd)?;
         self.pool.put(conn);
 
-        <Value>::deserialization(reply)
+        <V>::deserialization(reply)
     }
 }
