@@ -164,8 +164,12 @@ impl Serialization for f64 {
 }
 
 impl Deserialization for f64 {
-    fn deserialization(_reply: Reply) -> Result<Self> {
-        unimplemented!()
+    fn deserialization(reply: Reply) -> Result<Self> {
+        let Reply { kind, data } = reply;
+        match kind {
+            ReplyKind::BulkStrings => Ok(String::from_utf8(data)?.parse::<f64>()?),
+            _ => Err(Error::ParseRedisReply(String::from_utf8(data)?)),
+        }
     }
 }
 

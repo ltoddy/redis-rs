@@ -218,6 +218,21 @@ impl RedisClient {
         i64::deserialization(reply)
     }
 
+    /// Increment the string representing a floating point number stored at key by the specified increment.
+    pub fn incrbyfloat<K>(&mut self, key: K, increment: f64) -> Result<f64>
+    where
+        K: Serialization,
+    {
+        let mut cmd = Command::new("INCRBYFLOAT");
+        cmd.arg(key).arg(increment);
+
+        let mut conn = self.pool.get()?;
+        let reply = conn.execute(cmd)?;
+        self.pool.put(conn);
+
+        f64::deserialization(reply)
+    }
+
     pub fn set<K, V>(&mut self, key: K, value: V, ex: u64, px: u64, nx: bool, xx: bool) -> Result<()>
     where
         K: Serialization,

@@ -37,6 +37,12 @@ impl From<std::num::ParseIntError> for Error {
     }
 }
 
+impl From<std::num::ParseFloatError> for Error {
+    fn from(e: std::num::ParseFloatError) -> Self {
+        Error::ParseRedisReply(format!("{}", e))
+    }
+}
+
 impl From<std::string::FromUtf8Error> for Error {
     fn from(e: std::string::FromUtf8Error) -> Self {
         Error::ParseRedisReply(format!("{}", e))
