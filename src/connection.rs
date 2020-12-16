@@ -29,18 +29,13 @@ impl Connection {
         Self::new(stream)
     }
 
-    pub fn execute(&mut self, cmd: Command) -> Result<Reply> {
-        self.send(cmd)?;
-        self.receive()
-    }
-
-    fn send(&mut self, cmd: Command) -> Result<()> {
+    pub fn send(&mut self, cmd: Command) -> Result<()> {
         let send_data = cmd.to_vec();
         self.conn.write_all(&send_data)?;
         Ok(())
     }
 
-    fn receive(&mut self) -> Result<Reply> {
+    pub fn receive(&mut self) -> Result<Reply> {
         let mut buffer = Vec::new();
         self.reader.read_until(b'\n', &mut buffer)?;
         if buffer.is_empty() {

@@ -1,3 +1,4 @@
+use crate::connection::Reply;
 use crate::pool::ConnectionPool;
 use crate::protocol::{Deserialization, Serialization};
 use crate::Result;
@@ -49,11 +50,7 @@ impl RedisClient {
 
     pub fn ping(&mut self) -> Result<()> {
         let cmd = Command::new("PING");
-
-        let mut conn = self.pool.get()?;
-        let _ = conn.execute(cmd)?;
-        self.pool.put(conn);
-
+        let _ = self.execute(cmd);
         Ok(())
     }
 
@@ -65,9 +62,7 @@ impl RedisClient {
         let mut cmd = Command::new("APPEND");
         cmd.arg(key).arg(value);
 
-        let mut conn = self.pool.get()?;
-        let reply = conn.execute(cmd)?;
-        self.pool.put(conn);
+        let reply = self.execute(cmd)?;
 
         <u64>::deserialization(reply)
     }
@@ -86,9 +81,7 @@ impl RedisClient {
             cmd.arg(end);
         }
 
-        let mut conn = self.pool.get()?;
-        let reply = conn.execute(cmd)?;
-        self.pool.put(conn);
+        let reply = self.execute(cmd)?;
 
         <u64>::deserialization(reply)
     }
@@ -101,9 +94,7 @@ impl RedisClient {
         let mut cmd = Command::new("DECR");
         cmd.arg(key);
 
-        let mut conn = self.pool.get()?;
-        let reply = conn.execute(cmd)?;
-        self.pool.put(conn);
+        let reply = self.execute(cmd)?;
 
         <i64>::deserialization(reply)
     }
@@ -116,9 +107,7 @@ impl RedisClient {
         let mut cmd = Command::new("DECRBY");
         cmd.arg(key).arg(decrement);
 
-        let mut conn = self.pool.get()?;
-        let reply = conn.execute(cmd)?;
-        self.pool.put(conn);
+        let reply = self.execute(cmd)?;
 
         <i64>::deserialization(reply)
     }
@@ -133,9 +122,7 @@ impl RedisClient {
         let mut cmd = Command::new("GET");
         cmd.arg(key);
 
-        let mut conn = self.pool.get()?;
-        let reply = conn.execute(cmd)?;
-        self.pool.put(conn);
+        let reply = self.execute(cmd)?;
 
         <V>::deserialization(reply)
     }
@@ -149,9 +136,7 @@ impl RedisClient {
         cmd.arg(key);
         cmd.arg(offset);
 
-        let mut conn = self.pool.get()?;
-        let reply = conn.execute(cmd)?;
-        self.pool.put(conn);
+        let reply = self.execute(cmd)?;
 
         <u8>::deserialization(reply)
     }
@@ -164,11 +149,9 @@ impl RedisClient {
         let mut cmd = Command::new("GETRANGE");
         cmd.arg(key).arg(start).arg(end);
 
-        let mut conn = self.pool.get()?;
-        let reply = conn.execute(cmd)?;
-        self.pool.put(conn);
+        let reply = self.execute(cmd)?;
 
-        String::deserialization(reply)
+        <String>::deserialization(reply)
     }
 
     /// Atomically sets key to value and returns the old value stored at key.
@@ -181,11 +164,9 @@ impl RedisClient {
         let mut cmd = Command::new("GETSET");
         cmd.arg(key).arg(value.to_string());
 
-        let mut conn = self.pool.get()?;
-        let reply = conn.execute(cmd)?;
-        self.pool.put(conn);
+        let reply = self.execute(cmd)?;
 
-        String::deserialization(reply)
+        <String>::deserialization(reply)
     }
 
     /// Increments the number stored at key by one.
@@ -196,11 +177,9 @@ impl RedisClient {
         let mut cmd = Command::new("INCR");
         cmd.arg(key);
 
-        let mut conn = self.pool.get()?;
-        let reply = conn.execute(cmd)?;
-        self.pool.put(conn);
+        let reply = self.execute(cmd)?;
 
-        i64::deserialization(reply)
+        <i64>::deserialization(reply)
     }
 
     /// Increments the number stored at key by increment.
@@ -211,11 +190,9 @@ impl RedisClient {
         let mut cmd = Command::new("INCRBY");
         cmd.arg(key).arg(increment);
 
-        let mut conn = self.pool.get()?;
-        let reply = conn.execute(cmd)?;
-        self.pool.put(conn);
+        let reply = self.execute(cmd)?;
 
-        i64::deserialization(reply)
+        <i64>::deserialization(reply)
     }
 
     /// Increment the string representing a floating point number stored at key by the specified increment.
@@ -226,11 +203,9 @@ impl RedisClient {
         let mut cmd = Command::new("INCRBYFLOAT");
         cmd.arg(key).arg(increment);
 
-        let mut conn = self.pool.get()?;
-        let reply = conn.execute(cmd)?;
-        self.pool.put(conn);
+        let reply = self.execute(cmd)?;
 
-        f64::deserialization(reply)
+        <f64>::deserialization(reply)
     }
 
     /// Returns the values of all specified keys.
@@ -244,9 +219,7 @@ impl RedisClient {
             cmd.arg(key);
         }
 
-        let mut conn = self.pool.get()?;
-        let reply = conn.execute(cmd)?;
-        self.pool.put(conn);
+        let reply = self.execute(cmd)?;
 
         <Vec<V>>::deserialization(reply)
     }
@@ -262,9 +235,7 @@ impl RedisClient {
             cmd.arg(k).arg(v);
         }
 
-        let mut conn = self.pool.get()?;
-        let _ = conn.execute(cmd)?;
-        self.pool.put(conn);
+        let _ = self.execute(cmd)?;
         // TODO: check Reply::Errors
         Ok(())
     }
@@ -289,9 +260,7 @@ impl RedisClient {
             cmd.arg("NX");
         }
 
-        let mut conn = self.pool.get()?;
-        let _ = conn.execute(cmd)?;
-        self.pool.put(conn);
+        let _ = self.execute(cmd)?;
 
         Ok(())
     }
@@ -304,10 +273,15 @@ impl RedisClient {
         let mut cmd = Command::new("STRLEN");
         cmd.arg(key);
 
-        let mut conn = self.pool.get()?;
-        let reply = conn.execute(cmd)?;
-        self.pool.put(conn);
+        let reply = self.execute(cmd)?;
 
         <u64>::deserialization(reply)
+    }
+
+    fn execute(&mut self, cmd: Command) -> Result<Reply> {
+        let mut conn = self.pool.get()?;
+        conn.send(cmd)?;
+        let reply = conn.receive()?;
+        Ok(reply)
     }
 }
