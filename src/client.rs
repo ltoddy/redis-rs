@@ -269,6 +269,7 @@ impl RedisClient {
         Ok(())
     }
 
+    /// Set key to hold the string value.
     pub fn set<K, V>(&mut self, key: K, value: V, ex: u64, px: u64, nx: bool, xx: bool) -> Result<()>
     where
         K: Serialization,
@@ -293,5 +294,20 @@ impl RedisClient {
         self.pool.put(conn);
 
         Ok(())
+    }
+
+    /// Returns the length of the string value stored at key.
+    pub fn strlen<K>(&mut self, key: K) -> Result<u64>
+    where
+        K: Serialization,
+    {
+        let mut cmd = Command::new("STRLEN");
+        cmd.arg(key);
+
+        let mut conn = self.pool.get()?;
+        let reply = conn.execute(cmd)?;
+        self.pool.put(conn);
+
+        <u64>::deserialization(reply)
     }
 }
