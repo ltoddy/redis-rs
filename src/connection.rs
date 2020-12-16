@@ -88,6 +88,7 @@ impl Connection {
     }
 }
 
+#[derive(Debug)]
 pub enum Reply {
     SingleStrings(Vec<u8>),
     Errors(Vec<u8>),

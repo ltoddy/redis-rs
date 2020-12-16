@@ -251,6 +251,24 @@ impl RedisClient {
         <Vec<V>>::deserialization(reply)
     }
 
+    /// Sets the given keys to their respective values.
+    pub fn mset<K, V>(&mut self, kvs: Vec<(K, V)>) -> Result<()>
+    where
+        K: Serialization,
+        V: Serialization,
+    {
+        let mut cmd = Command::new("MSET");
+        for (k, v) in kvs {
+            cmd.arg(k).arg(v);
+        }
+
+        let mut conn = self.pool.get()?;
+        let _ = conn.execute(cmd)?;
+        self.pool.put(conn);
+        // TODO: check Reply::Errors
+        Ok(())
+    }
+
     pub fn set<K, V>(&mut self, key: K, value: V, ex: u64, px: u64, nx: bool, xx: bool) -> Result<()>
     where
         K: Serialization,
