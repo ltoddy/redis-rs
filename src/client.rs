@@ -233,6 +233,24 @@ impl RedisClient {
         f64::deserialization(reply)
     }
 
+    /// Returns the values of all specified keys.
+    pub fn mget<K, V>(&mut self, keys: Vec<K>) -> Result<Vec<V>>
+    where
+        K: Serialization,
+        V: Deserialization,
+    {
+        let mut cmd = Command::new("MGET");
+        for key in keys {
+            cmd.arg(key);
+        }
+
+        let mut conn = self.pool.get()?;
+        let reply = conn.execute(cmd)?;
+        self.pool.put(conn);
+
+        <Vec<V>>::deserialization(reply)
+    }
+
     pub fn set<K, V>(&mut self, key: K, value: V, ex: u64, px: u64, nx: bool, xx: bool) -> Result<()>
     where
         K: Serialization,

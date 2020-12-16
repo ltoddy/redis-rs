@@ -49,15 +49,13 @@ impl Connection {
         let buffer = &buffer[0..buffer.len() - 2];
 
         let reply = match buffer[0] {
-            Self::SINGLE_STRINGS => Reply::new(ReplyKind::SingleStrings, Vec::from(&buffer[1..])),
-            Self::ERRORS => Reply::new(ReplyKind::Errors, Vec::from(&buffer[1..])),
-            Self::INTEGERS => Reply::new(ReplyKind::Integers, Vec::from(&buffer[1..])),
-            Self::BULK_STRINGS => Reply::new(
-                ReplyKind::BulkStrings,
-                self.read_bulk(String::from_utf8_lossy(&buffer[1..]).parse::<i64>()?)?,
-            ),
-            Self::ARRAYS => todo!(),
-
+            Self::SINGLE_STRINGS => Reply::SingleStrings(Vec::from(&buffer[1..])),
+            Self::ERRORS => Reply::Errors(Vec::from(&buffer[1..])),
+            Self::INTEGERS => Reply::Integers(Vec::from(&buffer[1..])),
+            Self::BULK_STRINGS => {
+                Reply::BulkStrings(self.read_bulk(String::from_utf8_lossy(&buffer[1..]).parse::<i64>()?)?)
+            }
+            Self::ARRAYS => Reply::Arrays(self.read_array(String::from_utf8_lossy(&buffer[1..]).parse::<u64>()?)?),
             _ => unreachable!(),
         };
 
@@ -70,29 +68,30 @@ impl Connection {
             return Err(Error::KeyNotFound);
         }
 
-        let mut buf = vec![0; size as usize];
+        let mut buf = vec![0; (size + 2) as usize];
         self.reader.read_exact(&mut buf)?;
+        buf.truncate(buf.len() - 2);
         Ok(buf)
     }
-}
 
-#[derive(Debug)]
-pub enum ReplyKind {
-    SingleStrings,
-    Errors,
-    Integers,
-    BulkStrings,
-    Arrays,
-}
+    fn read_array(&mut self, len: u64) -> Result<Vec<Reply>> {
+        let mut result = Vec::with_capacity(len as usize);
+        for _ in 0..len {
+            let mut buf = Vec::new();
+            self.reader.read_until(b'\n', &mut buf)?;
+            let size = String::from_utf8_lossy(&buf[1..(buf.len() - 2)]).parse::<i64>()?;
+            let v = self.read_bulk(size)?;
+            result.push(Reply::BulkStrings(v));
+        }
 
-#[derive(Debug)]
-pub struct Reply {
-    pub kind: ReplyKind,
-    pub data: Vec<u8>,
-}
-
-impl Reply {
-    pub fn new(kind: ReplyKind, data: Vec<u8>) -> Self {
-        Reply { kind, data }
+        Ok(result)
     }
+}
+
+pub enum Reply {
+    SingleStrings(Vec<u8>),
+    Errors(Vec<u8>),
+    Integers(Vec<u8>),
+    BulkStrings(Vec<u8>),
+    Arrays(Vec<Reply>),
 }

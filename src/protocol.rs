@@ -1,6 +1,4 @@
 use crate::connection::Reply;
-use crate::connection::ReplyKind;
-use crate::error::Error;
 use crate::Result;
 
 pub trait Serialization {
@@ -28,16 +26,11 @@ impl Serialization for String {
 
 impl Deserialization for String {
     fn deserialization(reply: Reply) -> Result<Self> {
-        let Reply { kind, data } = reply;
-
-        match kind {
-            ReplyKind::SingleStrings => return Ok(String::from_utf8(data)?),
-            ReplyKind::BulkStrings => return Ok(String::from_utf8(data)?),
-
-            _ => "",
-        };
-
-        Ok(String::new())
+        match reply {
+            Reply::SingleStrings(data) => Ok(String::from_utf8_lossy(&data).to_string()),
+            Reply::BulkStrings(data) => Ok(String::from_utf8(data)?),
+            _ => unreachable!(),
+        }
     }
 }
 
@@ -56,10 +49,10 @@ impl Serialization for &str {
 
 impl Deserialization for u8 {
     fn deserialization(reply: Reply) -> Result<Self> {
-        let Reply { kind, data } = reply;
-        match kind {
-            ReplyKind::Integers => Ok(String::from_utf8(data)?.parse::<u8>()?),
-            _ => Err(Error::ParseRedisReply(String::from_utf8(data)?)),
+        match reply {
+            Reply::Integers(data) => Ok(String::from_utf8_lossy(&data).parse::<u8>()?),
+            // Reply::SingleStrings(data) => Ok(String::from_utf8_lossy(&data).parse::<u8>()?),
+            _ => unreachable!(),
         }
     }
 }
@@ -78,10 +71,11 @@ impl Serialization for i64 {
 
 impl Deserialization for i64 {
     fn deserialization(reply: Reply) -> Result<Self> {
-        let Reply { kind, data } = reply;
-        match kind {
-            ReplyKind::Integers | ReplyKind::BulkStrings => Ok(String::from_utf8(data)?.parse::<i64>()?),
-            _ => Err(Error::ParseRedisReply(String::from_utf8(data)?)),
+        match reply {
+            Reply::Integers(data) => Ok(String::from_utf8_lossy(&data).parse::<i64>()?),
+            Reply::SingleStrings(data) => Ok(String::from_utf8_lossy(&data).parse::<i64>()?),
+            Reply::BulkStrings(data) => Ok(String::from_utf8_lossy(&data).parse::<i64>()?),
+            _ => unreachable!(),
         }
     }
 }
@@ -102,34 +96,31 @@ impl Serialization for u64 {
 
 impl Deserialization for u64 {
     fn deserialization(reply: Reply) -> Result<Self> {
-        let Reply { kind, data } = reply;
-        match kind {
-            ReplyKind::Integers | ReplyKind::BulkStrings => Ok(String::from_utf8(data)?.parse::<u64>()?),
-            _ => Err(Error::ParseRedisReply(String::from_utf8(data)?)),
+        match reply {
+            Reply::Integers(data) => Ok(String::from_utf8_lossy(&data).parse::<u64>()?),
+            // Reply::SingleStrings(data) => Ok(String::from_utf8_lossy(&data).parse::<u64>()?),
+            Reply::BulkStrings(data) => Ok(String::from_utf8_lossy(&data).parse::<u64>()?),
+            _ => unreachable!(),
         }
     }
 }
 
 impl RedisSerializationProtocol for u64 {}
 
-impl Serialization for Vec<u8> {
-    fn serialization(&self) -> Vec<u8> {
-        let length = self.len();
-        let mut buf = Vec::new();
-        buf.extend_from_slice(format!("${}\r\n", length).as_bytes());
-        buf.extend_from_slice(self.as_slice());
-        buf.extend_from_slice(b"\r\n");
-        buf
+impl<T: Deserialization> Deserialization for Vec<T> {
+    fn deserialization(reply: Reply) -> Result<Self> {
+        match reply {
+            Reply::Arrays(array) => {
+                let mut values = Vec::new();
+                for ele in array {
+                    values.push(<T>::deserialization(ele)?);
+                }
+                Ok(values)
+            }
+            _ => unreachable!(),
+        }
     }
 }
-
-impl Deserialization for Vec<u8> {
-    fn deserialization(_reply: Reply) -> Result<Self> {
-        unimplemented!()
-    }
-}
-
-impl RedisSerializationProtocol for Vec<u8> {}
 
 impl Serialization for f32 {
     fn serialization(&self) -> Vec<u8> {
@@ -165,10 +156,11 @@ impl Serialization for f64 {
 
 impl Deserialization for f64 {
     fn deserialization(reply: Reply) -> Result<Self> {
-        let Reply { kind, data } = reply;
-        match kind {
-            ReplyKind::BulkStrings => Ok(String::from_utf8(data)?.parse::<f64>()?),
-            _ => Err(Error::ParseRedisReply(String::from_utf8(data)?)),
+        match reply {
+            Reply::Integers(data) => Ok(String::from_utf8_lossy(&data).parse::<f64>()?),
+            // Reply::SingleStrings(data) => Ok(String::from_utf8_lossy(&data).parse::<f64>()?),
+            Reply::BulkStrings(data) => Ok(String::from_utf8_lossy(&data).parse::<f64>()?),
+            _ => unreachable!(),
         }
     }
 }
@@ -178,6 +170,7 @@ impl RedisSerializationProtocol for f64 {}
 #[cfg(test)]
 pub mod tests {
     use super::*;
+    use crate::error::Error::RedisError;
 
     #[test]
     pub fn test_vector_serialization() {
@@ -213,7 +206,7 @@ pub mod tests {
 
     #[test]
     pub fn test_u64_deserialization() {
-        let reply = Reply::new(ReplyKind::Integers, vec![54, 48]);
+        let reply = Reply::Integers(vec![54, 48]);
 
         let got = <u64>::deserialization(reply).unwrap();
 
