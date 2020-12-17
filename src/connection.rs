@@ -16,6 +16,8 @@ impl Connection {
     const INTEGERS: u8 = b':';
     const BULK_STRINGS: u8 = b'$';
     const ARRAYS: u8 = b'*';
+    const OK: &'static [u8] = &[43, 79, 75, 13, 10];
+    const NIL: &'static [u8] = &[36, 45, 49, 13, 10];
 
     pub fn new(stream: TcpStream) -> RedisResult<Connection> {
         let reader = BufReader::new(stream.try_clone()?);
@@ -38,9 +40,16 @@ impl Connection {
     pub fn receive(&mut self) -> RedisResult<Reply> {
         let mut buffer = Vec::new();
         self.reader.read_until(b'\n', &mut buffer)?;
-        if buffer.is_empty() {
+        if buffer.len() < 2 {
             return Err(RedisError::custom(ErrorKind::ResponseError, "Empty redis response"));
         }
+        if buffer == Self::NIL {
+            return Ok(Reply::Nil);
+        }
+        if buffer == Self::OK {
+            return Ok(Reply::Okay);
+        }
+
         let buffer = &buffer[0..buffer.len() - 2];
 
         let reply = match buffer[0] {
@@ -57,6 +66,7 @@ impl Connection {
 
     fn read_bulk_strings(&mut self, size: i64) -> RedisResult<Reply> {
         if size < 0 {
+            // TODO: remove
             return Ok(Reply::Nil);
         }
 

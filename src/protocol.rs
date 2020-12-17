@@ -58,6 +58,7 @@ macro_rules! implement_deserialization_for_string {
                     match reply {
                         Reply::SingleStrings(data) => Ok(<$t>::from_utf8_lossy(&data).to_string()),
                         Reply::BulkStrings(data) => Ok(<$t>::from_utf8(data)?),
+                        Reply::Nil => Ok(<$t>::new()),
                         _ => unreachable!(),
                     }
                 }
