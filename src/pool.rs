@@ -1,8 +1,8 @@
 use std::collections::VecDeque;
 
 use crate::connection::Connection;
-use crate::error::Error;
-use crate::Result;
+use crate::error::{ErrorKind, RedisError};
+use crate::RedisResult;
 
 pub struct ConnectionPool {
     addr: String,
@@ -21,9 +21,9 @@ impl ConnectionPool {
         }
     }
 
-    pub fn get(&mut self) -> Result<Connection> {
+    pub fn get(&mut self) -> RedisResult<Connection> {
         if self.closed {
-            return Err(Error::ConnectionPoolClosed);
+            return Err(RedisError::custom(ErrorKind::ClientError, "Connection pool closed"));
         }
 
         if let Some(conn) = self.idles.pop_front() {

@@ -1,12 +1,12 @@
 use crate::connection::Reply;
-use crate::Result;
+use crate::RedisResult;
 
 pub trait Serialization {
     fn serialization(&self) -> Vec<u8>;
 }
 
 pub trait Deserialization {
-    fn deserialization(reply: Reply) -> Result<Self>
+    fn deserialization(reply: Reply) -> RedisResult<Self>
     where
         Self: Sized;
 }
@@ -54,7 +54,7 @@ macro_rules! implement_deserialization_for_string {
     ($($t:ty),*) => {
         $(
             impl Deserialization for $t {
-                fn deserialization(reply: Reply) -> Result<Self> {
+                fn deserialization(reply: Reply) -> RedisResult<Self> {
                     match reply {
                         Reply::SingleStrings(data) => Ok(<$t>::from_utf8_lossy(&data).to_string()),
                         Reply::BulkStrings(data) => Ok(<$t>::from_utf8(data)?),
@@ -70,7 +70,7 @@ macro_rules! implement_deserialization_for_number {
     ($($t:ty),*) => {
         $(
             impl Deserialization for $t {
-                fn deserialization(reply: Reply) -> Result<Self> {
+                fn deserialization(reply: Reply) -> RedisResult<Self> {
                     match reply {
                         Reply::Integers(data) => Ok(String::from_utf8_lossy(&data).parse::<$t>()?),
                         Reply::SingleStrings(data) => Ok(String::from_utf8_lossy(&data).parse::<$t>()?),
@@ -97,7 +97,7 @@ implement_deserialization_for_number!(u8, i8, u16, i16, u32, i32, u64, i64, usiz
 implement_redis_protocol_for!(String, u8, i8, u16, i16, u32, i32, u64, i64, usize, isize, f32, f64);
 
 impl<T: Deserialization> Deserialization for Vec<T> {
-    fn deserialization(reply: Reply) -> Result<Self> {
+    fn deserialization(reply: Reply) -> RedisResult<Self> {
         match reply {
             Reply::Arrays(array) => {
                 let mut values = Vec::new();

@@ -1,9 +1,9 @@
-use crate::error::Error;
-
 pub mod client;
 pub mod connection;
 pub mod error;
 pub mod pool;
 pub mod protocol;
 
-pub type Result<T> = std::result::Result<T, Error>;
+use crate::error::RedisError;
+
+pub type RedisResult<T> = std::result::Result<T, RedisError>;
