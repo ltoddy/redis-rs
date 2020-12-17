@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 /// An enum of all error kinds.
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
 pub enum ErrorKind {
@@ -6,6 +8,7 @@ pub enum ErrorKind {
     TypeError,
     Io,
     ClientError,
+    FromServer,
 }
 
 impl ErrorKind {
@@ -21,7 +24,7 @@ impl ErrorKind {
 
 pub enum Repr {
     Io(std::io::Error),
-    Custom(ErrorKind, &'static str),
+    Custom(ErrorKind, Cow<'static, str>),
 }
 
 pub struct RedisError {
@@ -32,7 +35,7 @@ impl std::fmt::Display for RedisError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.repr {
             Repr::Io(ref e) => e.fmt(f),
-            Repr::Custom(_, desc) => write!(f, "{}", desc),
+            Repr::Custom(_, ref desc) => write!(f, "{}", desc),
         }
     }
 }
@@ -54,7 +57,7 @@ impl From<std::io::Error> for RedisError {
 impl From<std::num::ParseIntError> for RedisError {
     fn from(_: std::num::ParseIntError) -> Self {
         RedisError {
-            repr: Repr::Custom(ErrorKind::TypeError, "invalid digit"),
+            repr: Repr::Custom(ErrorKind::TypeError, Cow::from("invalid digit")),
         }
     }
 }
@@ -62,7 +65,7 @@ impl From<std::num::ParseIntError> for RedisError {
 impl From<std::num::ParseFloatError> for RedisError {
     fn from(_: std::num::ParseFloatError) -> Self {
         RedisError {
-            repr: Repr::Custom(ErrorKind::TypeError, "invalid float"),
+            repr: Repr::Custom(ErrorKind::TypeError, Cow::from("invalid float")),
         }
     }
 }
@@ -70,7 +73,7 @@ impl From<std::num::ParseFloatError> for RedisError {
 impl From<std::string::FromUtf8Error> for RedisError {
     fn from(_: std::string::FromUtf8Error) -> Self {
         RedisError {
-            repr: Repr::Custom(ErrorKind::TypeError, "invalid utf-8"),
+            repr: Repr::Custom(ErrorKind::TypeError, Cow::from("invalid utf-8")),
         }
     }
 }
@@ -78,15 +81,15 @@ impl From<std::string::FromUtf8Error> for RedisError {
 impl From<std::str::Utf8Error> for RedisError {
     fn from(_: std::str::Utf8Error) -> Self {
         RedisError {
-            repr: Repr::Custom(ErrorKind::TypeError, "invalid utf-8"),
+            repr: Repr::Custom(ErrorKind::TypeError, Cow::from("invalid utf-8")),
         }
     }
 }
 
 impl RedisError {
-    pub fn custom(kind: ErrorKind, desc: &'static str) -> RedisError {
+    pub fn custom<S: ToString>(kind: ErrorKind, desc: S) -> RedisError {
         RedisError {
-            repr: Repr::Custom(kind, desc),
+            repr: Repr::Custom(kind, Cow::from(desc.to_string())),
         }
     }
 }

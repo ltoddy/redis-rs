@@ -1,4 +1,5 @@
 use crate::connection::Reply;
+use crate::error::{ErrorKind, RedisError};
 use crate::RedisResult;
 
 pub trait Serialization {
@@ -57,6 +58,7 @@ macro_rules! implement_deserialization_for_string {
                 fn deserialization(reply: Reply) -> RedisResult<Self> {
                     match reply {
                         Reply::SingleStrings(data) => Ok(<$t>::from_utf8_lossy(&data).to_string()),
+                        Reply::Errors(data) => Err(RedisError::custom(ErrorKind::FromServer, String::from_utf8(data)?)),
                         Reply::BulkStrings(data) => Ok(<$t>::from_utf8(data)?),
                         Reply::Nil => Ok(<$t>::new()),
                         _ => unreachable!(),
@@ -73,15 +75,15 @@ macro_rules! implement_deserialization_for_number {
             impl Deserialization for $t {
                 fn deserialization(reply: Reply) -> RedisResult<Self> {
                     match reply {
-                        Reply::Integers(data) => Ok(String::from_utf8_lossy(&data).parse::<$t>()?),
-                        Reply::SingleStrings(data) => Ok(String::from_utf8_lossy(&data).parse::<$t>()?),
-                        Reply::BulkStrings(data) => Ok(String::from_utf8_lossy(&data).parse::<$t>()?),
-                        _ => unreachable!(), // TODO: Reply::Errors
+                        Reply::SingleStrings(data) => Ok(String::from_utf8(data)?.parse::<$t>()?), // TODO: remove
+                        Reply::Errors(data) => Err(RedisError::custom(ErrorKind::FromServer, String::from_utf8(data)?)),
+                        Reply::Integers(data) => Ok(String::from_utf8(data)?.parse::<$t>()?),
+                        Reply::BulkStrings(data) => Ok(String::from_utf8(data)?.parse::<$t>()?),
+                        _ => unreachable!(),
                     }
                 }
             }
         )*
-
     };
 }
 
