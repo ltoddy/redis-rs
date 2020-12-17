@@ -112,7 +112,10 @@ impl RedisError {
 
     pub fn is_connection_refuse(&self) -> bool {
         match self.repr {
-            Repr::Io(ref e) => matches!(e.kind(), std::io::ErrorKind::TimedOut | std::io::ErrorKind::WouldBlock),
+            Repr::Io(ref e) => matches!(
+                e.kind(),
+                std::io::ErrorKind::ConnectionRefused | std::io::ErrorKind::NotFound
+            ),
             _ => false,
         }
     }
