@@ -2,24 +2,22 @@ use crate::connection::{Reply, SingleStrings::Okay};
 use crate::error::{ErrorKind, RedisError};
 use crate::RedisResult;
 
-pub trait Serialization {
+pub trait RedisSerializationProtocol {
     fn serialization(&self) -> Vec<u8>;
 }
 
-pub trait Deserialization {
+pub trait RedisDeserializationProtocol {
     fn deserialization(reply: Reply) -> RedisResult<Self>
     where
         Self: Sized;
 }
-
-pub trait RedisProtocol: Serialization + Deserialization {}
 
 // ---------------------------------------
 
 macro_rules! implement_serialization_for_string {
     ($($t:ty),*) => {
         $(
-            impl Serialization for $t {
+            impl RedisSerializationProtocol for $t {
                 fn serialization(&self) -> Vec<u8> {
                     let length = self.len();
                     let mut buf = Vec::new();
@@ -36,7 +34,7 @@ macro_rules! implement_serialization_for_string {
 macro_rules! implement_serialization_for_number {
     ($($t:ty),*) => {
         $(
-            impl Serialization for $t {
+            impl RedisSerializationProtocol for $t {
                 fn serialization(&self) -> Vec<u8> {
                     let s = format!("{}", self);
                     let length = s.len();
@@ -54,7 +52,7 @@ macro_rules! implement_serialization_for_number {
 macro_rules! implement_deserialization_for_string {
     ($($t:ty),*) => {
         $(
-            impl Deserialization for $t {
+            impl RedisDeserializationProtocol for $t {
                 fn deserialization(reply: Reply) -> RedisResult<Self> {
                     match reply {
                         Reply::SingleStrings(single) => {
@@ -74,7 +72,7 @@ macro_rules! implement_deserialization_for_string {
 macro_rules! implement_deserialization_for_number {
     ($($t:ty),*) => {
         $(
-            impl Deserialization for $t {
+            impl RedisDeserializationProtocol for $t {
                 fn deserialization(reply: Reply) -> RedisResult<Self> {
                     match reply {
                         Reply::Errors(data) => Err(RedisError::custom(ErrorKind::FromServer, String::from_utf8(data)?)),
@@ -88,19 +86,12 @@ macro_rules! implement_deserialization_for_number {
     };
 }
 
-macro_rules! implement_redis_protocol_for {
-    ($($t:ty),*) => {
-        $(impl RedisProtocol for $t {})*
-    };
-}
-
 implement_serialization_for_string!(String, &str);
 implement_deserialization_for_string!(String);
 implement_serialization_for_number!(u8, i8, u16, i16, u32, i32, u64, i64, usize, isize, f32, f64);
 implement_deserialization_for_number!(u8, i8, u16, i16, u32, i32, u64, i64, usize, isize, f32, f64);
-implement_redis_protocol_for!(String, u8, i8, u16, i16, u32, i32, u64, i64, usize, isize, f32, f64);
 
-impl<T: Deserialization> Deserialization for Vec<T> {
+impl<T: RedisDeserializationProtocol> RedisDeserializationProtocol for Vec<T> {
     fn deserialization(reply: Reply) -> RedisResult<Self> {
         match reply {
             Reply::Arrays(array) => {

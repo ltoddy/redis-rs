@@ -1,6 +1,6 @@
 use crate::connection::Reply;
 use crate::pool::ConnectionPool;
-use crate::protocol::{Deserialization, Serialization};
+use crate::protocol::{RedisDeserializationProtocol, RedisSerializationProtocol};
 use crate::RedisResult;
 
 pub struct Command {
@@ -16,7 +16,7 @@ impl Command {
         Command { cmd, args, count: 1 }
     }
 
-    pub fn arg<T: Serialization>(&mut self, arg: T) -> &mut Self {
+    pub fn arg<T: RedisSerializationProtocol>(&mut self, arg: T) -> &mut Self {
         self.args.extend_from_slice(arg.serialization().as_slice());
         self.count += 1;
         self
@@ -56,8 +56,8 @@ impl RedisClient {
 
     pub fn append<K, V>(&mut self, key: K, value: V) -> RedisResult<u64>
     where
-        K: Serialization,
-        V: Serialization,
+        K: RedisSerializationProtocol,
+        V: RedisSerializationProtocol,
     {
         let mut cmd = Command::new("APPEND");
         cmd.arg(key).arg(value);
@@ -70,7 +70,7 @@ impl RedisClient {
     /// Count the number of set bits (population counting) in a string.
     pub fn bitcount<K>(&mut self, key: K, start: Option<i64>, end: Option<i64>) -> RedisResult<u64>
     where
-        K: Serialization,
+        K: RedisSerializationProtocol,
     {
         let mut cmd = Command::new("BITCOUNT");
         cmd.arg(key);
@@ -86,10 +86,26 @@ impl RedisClient {
         <u64>::deserialization(reply)
     }
 
+    /// Perform a bitwise operation between multiple keys (containing string values) and store the result in the destination key.
+    pub fn bitop<K1, K2>(&mut self, operation: &str, destkey: K1, keys: Vec<K2>) -> RedisResult<usize>
+    where
+        K1: RedisSerializationProtocol,
+        K2: RedisSerializationProtocol,
+    {
+        let mut cmd = Command::new("BITOP");
+        cmd.arg(operation).arg(destkey);
+        for key in keys {
+            cmd.arg(key);
+        }
+
+        let reply = self.execute(cmd)?;
+        <usize>::deserialization(reply)
+    }
+
     /// Decrements the number stored at key by one.
     pub fn decr<K>(&mut self, key: K) -> RedisResult<i64>
     where
-        K: Serialization,
+        K: RedisSerializationProtocol,
     {
         let mut cmd = Command::new("DECR");
         cmd.arg(key);
@@ -102,7 +118,7 @@ impl RedisClient {
     /// Decrements the number stored at key by decrement.
     pub fn decrby<K>(&mut self, key: K, decrement: i64) -> RedisResult<i64>
     where
-        K: Serialization,
+        K: RedisSerializationProtocol,
     {
         let mut cmd = Command::new("DECRBY");
         cmd.arg(key).arg(decrement);
@@ -115,8 +131,8 @@ impl RedisClient {
     /// Get the value of key.
     pub fn get<K, V>(&mut self, key: K) -> RedisResult<V>
     where
-        K: Serialization,
-        V: Deserialization,
+        K: RedisSerializationProtocol,
+        V: RedisDeserializationProtocol,
     {
         // TODO: use Result<Option<>>
         let mut cmd = Command::new("GET");
@@ -130,7 +146,7 @@ impl RedisClient {
     /// Returns the bit value at offset in the string value stored at key.
     pub fn getbit<K>(&mut self, key: K, offset: i64) -> RedisResult<u8>
     where
-        K: Serialization,
+        K: RedisSerializationProtocol,
     {
         let mut cmd = Command::new("GETBIT");
         cmd.arg(key);
@@ -144,7 +160,7 @@ impl RedisClient {
     /// Returns the substring of the string value stored at key, determined by the offsets start and end (both are inclusive).
     pub fn getrange<K>(&mut self, key: K, start: i64, end: i64) -> RedisResult<String>
     where
-        K: Serialization,
+        K: RedisSerializationProtocol,
     {
         let mut cmd = Command::new("GETRANGE");
         cmd.arg(key).arg(start).arg(end);
@@ -157,7 +173,7 @@ impl RedisClient {
     /// Atomically sets key to value and returns the old value stored at key.
     pub fn getset<K, V>(&mut self, key: K, value: V) -> RedisResult<String>
     where
-        K: Serialization,
+        K: RedisSerializationProtocol,
         V: ToString,
     {
         // TODO: use Result<Option<>>
@@ -172,7 +188,7 @@ impl RedisClient {
     /// Increments the number stored at key by one.
     pub fn incr<K>(&mut self, key: K) -> RedisResult<i64>
     where
-        K: Serialization,
+        K: RedisSerializationProtocol,
     {
         let mut cmd = Command::new("INCR");
         cmd.arg(key);
@@ -185,7 +201,7 @@ impl RedisClient {
     /// Increments the number stored at key by increment.
     pub fn incrby<K>(&mut self, key: K, increment: i64) -> RedisResult<i64>
     where
-        K: Serialization,
+        K: RedisSerializationProtocol,
     {
         let mut cmd = Command::new("INCRBY");
         cmd.arg(key).arg(increment);
@@ -198,7 +214,7 @@ impl RedisClient {
     /// Increment the string representing a floating point number stored at key by the specified increment.
     pub fn incrbyfloat<K>(&mut self, key: K, increment: f64) -> RedisResult<f64>
     where
-        K: Serialization,
+        K: RedisSerializationProtocol,
     {
         let mut cmd = Command::new("INCRBYFLOAT");
         cmd.arg(key).arg(increment);
@@ -211,8 +227,8 @@ impl RedisClient {
     /// Returns the values of all specified keys.
     pub fn mget<K, V>(&mut self, keys: Vec<K>) -> RedisResult<Vec<V>>
     where
-        K: Serialization,
-        V: Deserialization,
+        K: RedisSerializationProtocol,
+        V: RedisDeserializationProtocol,
     {
         let mut cmd = Command::new("MGET");
         for key in keys {
@@ -227,8 +243,8 @@ impl RedisClient {
     /// Sets the given keys to their respective values.
     pub fn mset<K, V>(&mut self, kvs: Vec<(K, V)>) -> RedisResult<()>
     where
-        K: Serialization,
-        V: Serialization,
+        K: RedisSerializationProtocol,
+        V: RedisSerializationProtocol,
     {
         let mut cmd = Command::new("MSET");
         for (k, v) in kvs {
@@ -243,8 +259,8 @@ impl RedisClient {
     /// Set key to hold the string value.
     pub fn set<K, V>(&mut self, key: K, value: V, ex: u64, px: u64, nx: bool, xx: bool) -> RedisResult<()>
     where
-        K: Serialization,
-        V: Serialization,
+        K: RedisSerializationProtocol,
+        V: RedisSerializationProtocol,
     {
         let mut cmd = Command::new("SET");
         cmd.arg(key).arg(value);
@@ -268,7 +284,7 @@ impl RedisClient {
     /// Returns the length of the string value stored at key.
     pub fn strlen<K>(&mut self, key: K) -> RedisResult<u64>
     where
-        K: Serialization,
+        K: RedisSerializationProtocol,
     {
         let mut cmd = Command::new("STRLEN");
         cmd.arg(key);
