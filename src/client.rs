@@ -1,4 +1,5 @@
 use crate::connection::Reply;
+use crate::error::{ErrorKind, RedisError};
 use crate::pool::ConnectionPool;
 use crate::protocol::{RedisDeserializationProtocol, RedisSerializationProtocol};
 use crate::RedisResult;
@@ -100,6 +101,28 @@ impl RedisClient {
 
         let reply = self.execute(cmd)?;
         <usize>::deserialization(reply)
+    }
+
+    /// Return the position of the first bit set to 1 or 0 in a string.
+    pub fn bitpos<K>(&mut self, key: K, bit: u8, start: Option<usize>, end: Option<usize>) -> RedisResult<isize>
+    where
+        K: RedisSerializationProtocol,
+    {
+        if end.is_some() && start.is_none() {
+            return Err(RedisError::custom(ErrorKind::ClientError, "`start` shouldn't be none when `end` has given"));
+        }
+
+        let mut cmd = Command::new("BITPOS");
+        cmd.arg(key).arg(bit);
+        if let Some(start) = start {
+            cmd.arg(start);
+        }
+        if let Some(end) = end {
+            cmd.arg(end);
+        }
+
+        let reply = self.execute(cmd)?;
+        <isize>::deserialization(reply)
     }
 
     /// Decrements the number stored at key by one.

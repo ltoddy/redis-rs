@@ -49,6 +49,24 @@ macro_rules! implement_serialization_for_number {
     };
 }
 
+macro_rules! implement_serialization_for_array {
+    ($($t:ty),*) => {
+        $(
+            impl RedisSerializationProtocol for $t {
+                fn serialization(&self) -> Vec<u8> {
+                    let length = self.len();
+                    let mut buf = Vec::new();
+                    buf.extend_from_slice(b"*1\r\n");
+                    buf.extend_from_slice(format!("${}\r\n", length).as_bytes());
+                    buf.extend_from_slice(self);
+                    buf.extend_from_slice(b"\r\n");
+                    buf
+                }
+            }
+        )*
+    };
+}
+
 macro_rules! implement_deserialization_for_string {
     ($($t:ty),*) => {
         $(
@@ -90,6 +108,7 @@ implement_serialization_for_string!(String, &str);
 implement_deserialization_for_string!(String);
 implement_serialization_for_number!(u8, i8, u16, i16, u32, i32, u64, i64, usize, isize, f32, f64);
 implement_deserialization_for_number!(u8, i8, u16, i16, u32, i32, u64, i64, usize, isize, f32, f64);
+implement_serialization_for_array!(Vec<u8>); // TODO
 
 impl<T: RedisDeserializationProtocol> RedisDeserializationProtocol for Vec<T> {
     fn deserialization(reply: Reply) -> RedisResult<Self> {
