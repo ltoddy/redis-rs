@@ -313,28 +313,50 @@ impl RedisClient {
     }
 
     /// Set key to hold the string value.
-    pub fn set<K, V>(&mut self, key: K, value: V, ex: u64, px: u64, nx: bool, xx: bool) -> RedisResult<()>
+    pub fn set<K, V>(
+        &mut self,
+        key: K,
+        value: V,
+        ex_seconds: Option<u64>,
+        px_milliseconds: Option<u64>,
+        nx: Option<bool>,
+        xx: Option<bool>,
+    ) -> RedisResult<()>
     where
         K: RedisSerializationProtocol,
         V: RedisSerializationProtocol,
     {
         let mut cmd = Command::new("SET");
         cmd.arg(key).arg(value);
-        if ex > 0 {
+        if let Some(ex) = ex_seconds {
             cmd.arg("EX").arg(ex);
         }
-        if px > 0 {
+        if let Some(px) = px_milliseconds {
             cmd.arg("PX").arg(px);
         }
-        if nx {
-            cmd.arg("XX");
-        } else if xx {
-            cmd.arg("NX");
+        if let Some(nx) = nx {
+            if nx {
+                cmd.arg("NX");
+            }
+        }
+        if let Some(xx) = xx {
+            if xx {
+                cmd.arg("XX");
+            }
         }
 
         let _ = self.execute(cmd)?;
 
         Ok(())
+    }
+
+    /// Set key to hold the string value.
+    pub fn simple_set<K, V>(&mut self, key: K, value: V) -> RedisResult<()>
+    where
+        K: RedisSerializationProtocol,
+        V: RedisSerializationProtocol,
+    {
+        self.set(key, value, None, None, None, None)
     }
 
     /// Returns the length of the string value stored at key.
