@@ -106,8 +106,8 @@ macro_rules! implement_deserialization_for_number {
 
 implement_serialization_for_string!(String, &str);
 implement_deserialization_for_string!(String);
-implement_serialization_for_number!(u8, i8, u16, i16, u32, i32, u64, i64, usize, isize, f32, f64);
-implement_deserialization_for_number!(u8, i8, u16, i16, u32, i32, u64, i64, usize, isize, f32, f64);
+implement_serialization_for_number!(u8, i8, u16, i16, u32, i32, u64, i64, u128, i128, usize, isize, f32, f64);
+implement_deserialization_for_number!(u8, i8, u16, i16, u32, i32, u64, i64, u128, i128, usize, isize, f32, f64);
 implement_serialization_for_array!(Vec<u8>); // TODO
 
 impl<T: RedisDeserializationProtocol> RedisDeserializationProtocol for Vec<T> {

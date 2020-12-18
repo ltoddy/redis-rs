@@ -298,6 +298,20 @@ impl RedisClient {
         Ok(())
     }
 
+    /// PSETEX works exactly like SETEX with the sole difference that the expire time is specified in milliseconds instead of seconds.
+    pub fn psetex<K, V>(&mut self, key: K, milliseconds: u64, value: V) -> RedisResult<()>
+    where
+        K: RedisSerializationProtocol,
+        V: RedisSerializationProtocol,
+    {
+        let mut cmd = Command::new("PSETEX");
+        cmd.arg(key).arg(milliseconds).arg(value);
+
+        let _ = self.execute(cmd)?; // TODO
+
+        Ok(())
+    }
+
     /// Set key to hold the string value.
     pub fn set<K, V>(&mut self, key: K, value: V, ex: u64, px: u64, nx: bool, xx: bool) -> RedisResult<()>
     where
