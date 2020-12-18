@@ -109,7 +109,10 @@ impl RedisClient {
         K: RedisSerializationProtocol,
     {
         if end.is_some() && start.is_none() {
-            return Err(RedisError::custom(ErrorKind::ClientError, "`start` shouldn't be none when `end` has given"));
+            return Err(RedisError::custom(
+                ErrorKind::ClientError,
+                "`start` shouldn't be none when `end` has given",
+            ));
         }
 
         let mut cmd = Command::new("BITPOS");
@@ -276,6 +279,22 @@ impl RedisClient {
 
         let _ = self.execute(cmd)?;
         // TODO: check Reply::Errors
+        Ok(())
+    }
+
+    /// Sets the given keys to their respective values.
+    pub fn msetnx<K, V>(&mut self, kvs: Vec<(K, V)>) -> RedisResult<()>
+    where
+        K: RedisSerializationProtocol,
+        V: RedisSerializationProtocol,
+    {
+        let mut cmd = Command::new("MSETNX");
+        for (k, v) in kvs {
+            cmd.arg(k).arg(v);
+        }
+
+        let _ = self.execute(cmd)?;
+
         Ok(())
     }
 
