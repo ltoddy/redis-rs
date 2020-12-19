@@ -67,6 +67,8 @@ impl RedisClient {
         Ok(client)
     }
 
+    // Connection commands
+    /// The AUTH command authenticates the current connection
     pub fn auth(&mut self, password: String) -> RedisResult<()> {
         let mut cmd = Command::new("AUTH");
         cmd.arg(password);
@@ -75,6 +77,33 @@ impl RedisClient {
         <()>::deserialization(reply)
     }
 
+    /// Returns message.
+    pub fn echo<T>(&mut self, message: T) -> RedisResult<T>
+    where
+        T: RedisSerializationProtocol + RedisDeserializationProtocol,
+    {
+        let mut cmd = Command::new("ECHO");
+        cmd.arg(message);
+
+        let reply = self.execute(cmd)?;
+        <T>::deserialization(reply)
+    }
+
+    /// Returns PONG if no argument is provided, otherwise return a copy of the argument as a bulk.
+    pub fn ping(&mut self) -> RedisResult<()> {
+        let cmd = Command::new("PING");
+        let reply = self.execute(cmd)?;
+        <()>::deserialization(reply)
+    }
+
+    /// Ask the server to close the connection.
+    pub fn quit(&mut self) -> RedisResult<()> {
+        let cmd = Command::new("QUIT");
+        let reply = self.execute(cmd)?;
+        <()>::deserialization(reply)
+    }
+
+    /// Select the Redis logical database having the specified zero-based numeric index.
     pub fn select(&mut self, database: u8) -> RedisResult<()> {
         let mut cmd = Command::new("SELECT");
         cmd.arg(database);
@@ -83,12 +112,7 @@ impl RedisClient {
         <()>::deserialization(reply)
     }
 
-    pub fn ping(&mut self) -> RedisResult<()> {
-        let cmd = Command::new("PING");
-        let reply = self.execute(cmd)?;
-        <()>::deserialization(reply)
-    }
-
+    // Strings commands
     pub fn append<K, V>(&mut self, key: K, value: V) -> RedisResult<u64>
     where
         K: RedisSerializationProtocol,

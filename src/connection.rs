@@ -16,8 +16,9 @@ impl Connection {
     const INTEGERS: u8 = b':';
     const BULK_STRINGS: u8 = b'$';
     const ARRAYS: u8 = b'*';
-    const OK: &'static [u8] = &[79, 75, 13, 10];
-    const NIL: &'static [u8] = &[36, 45, 49, 13, 10];
+    const OK: &'static [u8] = b"OK";
+    const PONG: &'static [u8] = b"PONG";
+    const NIL: &'static [u8] = b"NIL";
 
     fn new(stream: TcpStream) -> RedisResult<Connection> {
         let reader = BufReader::new(stream.try_clone()?);
@@ -67,6 +68,8 @@ impl Connection {
         // TODO
         if buffer == Self::OK {
             return Ok(Reply::SingleStrings(SingleStrings::Okay));
+        } else if buffer == Self::PONG {
+            return Ok(Reply::SingleStrings(SingleStrings::Pong));
         }
         Ok(Reply::SingleStrings(SingleStrings::Okay))
     }
@@ -108,6 +111,7 @@ impl Connection {
 #[derive(Debug)]
 pub enum SingleStrings {
     Okay,
+    Pong,
 }
 
 #[derive(Debug)]

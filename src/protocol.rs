@@ -1,4 +1,7 @@
-use crate::connection::{Reply, SingleStrings::Okay};
+use crate::connection::{
+    Reply,
+    SingleStrings::{Okay, Pong},
+};
 use crate::error::ErrorKind::TypeError;
 use crate::error::RedisError;
 use crate::RedisResult;
@@ -75,7 +78,7 @@ macro_rules! implement_deserialization_for_string {
                 fn deserialization(reply: Reply) -> RedisResult<Self> {
                     match reply {
                         Reply::SingleStrings(single) => {
-                            match single { Okay => Ok(<$t>::new()) }
+                            match single { Okay | Pong => Ok(<$t>::new()) }
                         },
                         Reply::BulkStrings(data) => Ok(<$t>::from_utf8(data)?),
                         Reply::Nil => Ok(<$t>::new()),
@@ -113,7 +116,7 @@ impl RedisDeserializationProtocol for () {
     fn deserialization(reply: Reply) -> RedisResult<Self> {
         match reply {
             Reply::SingleStrings(single) => match single {
-                Okay => Ok(()),
+                Okay | Pong => Ok(()),
             },
             _ => Err(RedisError::custom(TypeError, "miss type")),
         }

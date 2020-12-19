@@ -11,17 +11,6 @@ pub enum ErrorKind {
     FromServer,
 }
 
-impl ErrorKind {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            ErrorKind::ResponseError => "invalid response",
-            ErrorKind::AuthenticationFailed => "authentication failed",
-            ErrorKind::TypeError => "type mismatch",
-            _ => unreachable!(),
-        }
-    }
-}
-
 pub enum Repr {
     Io(std::io::Error),
     Custom(ErrorKind, Cow<'static, str>),
