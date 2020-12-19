@@ -359,6 +359,19 @@ impl RedisClient {
         self.set(key, value, None, None, None, None)
     }
 
+    /// Sets or clears the bit at offset in the string value stored at key.
+    pub fn setbit<K>(&mut self, key: K, offset: usize, value: u8) -> RedisResult<u8>
+    where
+        K: RedisSerializationProtocol,
+    {
+        let mut cmd = Command::new("SETBIT");
+        cmd.arg(key).arg(offset).arg(value);
+
+        let reply = self.execute(cmd)?;
+
+        <u8>::deserialization(reply)
+    }
+
     /// Returns the length of the string value stored at key.
     pub fn strlen<K>(&mut self, key: K) -> RedisResult<u64>
     where
