@@ -1,3 +1,4 @@
+use crate::config::RedisConfig;
 use crate::connection::Reply;
 use crate::error::{ErrorKind, RedisError};
 use crate::pool::ConnectionPool;
@@ -36,17 +37,50 @@ pub struct RedisClient {
     pool: ConnectionPool,
 }
 
-impl Default for RedisClient {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl RedisClient {
-    pub fn new() -> RedisClient {
-        RedisClient {
-            pool: ConnectionPool::new(16),
+    pub fn new() -> RedisResult<RedisClient> {
+        let config = RedisConfig::default();
+
+        Self::with_config(config)
+    }
+
+    pub fn with_config(config: RedisConfig) -> RedisResult<RedisClient> {
+        let RedisConfig {
+            address,
+            database,
+            password,
+            pool_capacity,
+        } = config;
+
+        let mut client = RedisClient {
+            pool: ConnectionPool::new(pool_capacity, address),
+        };
+
+        if !password.is_empty() {
+            client.auth(password)?;
         }
+
+        if database > 0 {
+            client.select(database)?;
+        }
+
+        Ok(client)
+    }
+
+    pub fn auth(&mut self, password: String) -> RedisResult<()> {
+        let mut cmd = Command::new("AUTH");
+        cmd.arg(password);
+
+        let reply = self.execute(cmd)?;
+        <()>::deserialization(reply)
+    }
+
+    pub fn select(&mut self, database: u8) -> RedisResult<()> {
+        let mut cmd = Command::new("SELECT");
+        cmd.arg(database);
+
+        let reply = self.execute(cmd)?;
+        <()>::deserialization(reply)
     }
 
     pub fn ping(&mut self) -> RedisResult<()> {

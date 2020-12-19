@@ -19,7 +19,7 @@ impl Connection {
     const OK: &'static [u8] = &[79, 75, 13, 10];
     const NIL: &'static [u8] = &[36, 45, 49, 13, 10];
 
-    pub(super) fn new(stream: TcpStream) -> RedisResult<Connection> {
+    fn new(stream: TcpStream) -> RedisResult<Connection> {
         let reader = BufReader::new(stream.try_clone()?);
 
         Ok(Connection { conn: stream, reader })

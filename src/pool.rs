@@ -12,9 +12,9 @@ pub struct ConnectionPool {
 }
 
 impl ConnectionPool {
-    pub(super) fn new(capacity: usize) -> ConnectionPool {
+    pub(super) fn new(capacity: usize, address: String) -> ConnectionPool {
         ConnectionPool {
-            addr: String::from("127.0.0.1:6379"),
+            addr: address,
             capacity,
             idles: VecDeque::with_capacity(capacity),
             closed: false,
