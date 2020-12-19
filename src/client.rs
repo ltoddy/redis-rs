@@ -372,6 +372,20 @@ impl RedisClient {
         <u8>::deserialization(reply)
     }
 
+    /// Set key to hold the string value and set key to timeout after a given number of seconds.
+    pub fn setex<K, V>(&mut self, key: K, seconds: usize, value: V) -> RedisResult<()>
+    where
+        K: RedisSerializationProtocol,
+        V: RedisSerializationProtocol,
+    {
+        let mut cmd = Command::new("SETEX");
+        cmd.arg(key).arg(seconds).arg(value);
+
+        let _ = self.execute(cmd)?;
+
+        Ok(())
+    }
+
     /// Returns the length of the string value stored at key.
     pub fn strlen<K>(&mut self, key: K) -> RedisResult<u64>
     where
