@@ -400,6 +400,19 @@ impl RedisClient {
         Ok(res > 0)
     }
 
+    pub fn setrange<K, V>(&mut self, key: K, offset: usize, value: V) -> RedisResult<usize>
+    where
+        K: RedisSerializationProtocol,
+        V: RedisSerializationProtocol,
+    {
+        let mut cmd = Command::new("SETRANGE");
+        cmd.arg(key).arg(offset).arg(value);
+
+        let reply = self.execute(cmd)?;
+
+        <usize>::deserialization(reply)
+    }
+
     /// Returns the length of the string value stored at key.
     pub fn strlen<K>(&mut self, key: K) -> RedisResult<u64>
     where
