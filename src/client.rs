@@ -386,6 +386,20 @@ impl RedisClient {
         Ok(())
     }
 
+    pub fn setnx<K, V>(&mut self, key: K, value: V) -> RedisResult<bool>
+    where
+        K: RedisSerializationProtocol,
+        V: RedisSerializationProtocol,
+    {
+        let mut cmd = Command::new("SETNX");
+        cmd.arg(key).arg(value);
+
+        let reply = self.execute(cmd)?;
+        let res = <u8>::deserialization(reply)?;
+
+        Ok(res > 0)
+    }
+
     /// Returns the length of the string value stored at key.
     pub fn strlen<K>(&mut self, key: K) -> RedisResult<u64>
     where
