@@ -12,7 +12,7 @@ pub struct ConnectionPool {
 }
 
 impl ConnectionPool {
-    pub fn new(capacity: usize) -> ConnectionPool {
+    pub(super) fn new(capacity: usize) -> ConnectionPool {
         ConnectionPool {
             addr: String::from("127.0.0.1:6379"),
             capacity,
@@ -21,7 +21,7 @@ impl ConnectionPool {
         }
     }
 
-    pub fn get(&mut self) -> RedisResult<Connection> {
+    pub(super) fn get(&mut self) -> RedisResult<Connection> {
         if self.closed {
             return Err(RedisError::custom(ErrorKind::ClientError, "Connection pool closed"));
         }
@@ -32,7 +32,7 @@ impl ConnectionPool {
         Connection::connect(&self.addr)
     }
 
-    pub fn put(&mut self, conn: Connection) {
+    pub(super) fn put(&mut self, conn: Connection) {
         if self.closed {
             return;
         }
@@ -43,11 +43,17 @@ impl ConnectionPool {
         self.idles.push_back(conn);
     }
 
-    pub fn close(&mut self) {
+    fn close(&mut self) {
         self.closed = true;
 
         while let Some(conn) = self.idles.pop_front() {
             drop(conn);
         }
+    }
+}
+
+impl Drop for ConnectionPool {
+    fn drop(&mut self) {
+        self.close()
     }
 }

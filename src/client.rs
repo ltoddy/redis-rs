@@ -4,26 +4,26 @@ use crate::pool::ConnectionPool;
 use crate::protocol::{RedisDeserializationProtocol, RedisSerializationProtocol};
 use crate::RedisResult;
 
-pub struct Command {
+struct Command {
     cmd: String,
     args: Vec<u8>,
     count: usize,
 }
 
 impl Command {
-    pub fn new<S: ToString>(cmd: S) -> Command {
+    fn new<S: ToString>(cmd: S) -> Command {
         let cmd = cmd.to_string();
         let args = Vec::new();
         Command { cmd, args, count: 1 }
     }
 
-    pub fn arg<T: RedisSerializationProtocol>(&mut self, arg: T) -> &mut Self {
+    fn arg<T: RedisSerializationProtocol>(&mut self, arg: T) -> &mut Self {
         self.args.extend_from_slice(arg.serialization().as_slice());
         self.count += 1;
         self
     }
 
-    pub fn to_vec(&self) -> Vec<u8> {
+    fn to_vec(&self) -> Vec<u8> {
         let mut buf = Vec::new();
         buf.extend_from_slice(format!("*{}\r\n", self.count).as_bytes());
         buf.extend_from_slice(self.cmd.serialization().as_slice());
@@ -384,6 +384,7 @@ impl RedisClient {
         <()>::deserialization(reply)
     }
 
+    /// Set key to hold string value if key does not exist.
     pub fn setnx<K, V>(&mut self, key: K, value: V) -> RedisResult<bool>
     where
         K: RedisSerializationProtocol,
@@ -398,6 +399,7 @@ impl RedisClient {
         Ok(res > 0)
     }
 
+    /// Overwrites part of the string stored at key, starting at the specified offset, for the entire length of value.
     pub fn setrange<K, V>(&mut self, key: K, offset: usize, value: V) -> RedisResult<usize>
     where
         K: RedisSerializationProtocol,
@@ -426,8 +428,9 @@ impl RedisClient {
 
     fn execute(&mut self, cmd: Command) -> RedisResult<Reply> {
         let mut conn = self.pool.get()?;
-        conn.send(cmd)?;
+        conn.send(&cmd.to_vec())?;
         let reply = conn.receive()?;
+        self.pool.put(conn);
         Ok(reply)
     }
 }

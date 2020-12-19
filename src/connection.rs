@@ -1,14 +1,13 @@
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{TcpStream, ToSocketAddrs};
 
-use crate::client::Command;
 use crate::error::ErrorKind::FromServer;
 use crate::error::{ErrorKind::ResponseError, RedisError};
 use crate::RedisResult;
 
-pub struct Connection {
-    pub conn: TcpStream,
-    pub reader: BufReader<TcpStream>,
+pub(super) struct Connection {
+    conn: TcpStream,
+    reader: BufReader<TcpStream>,
 }
 
 impl Connection {
@@ -20,25 +19,24 @@ impl Connection {
     const OK: &'static [u8] = &[79, 75, 13, 10];
     const NIL: &'static [u8] = &[36, 45, 49, 13, 10];
 
-    pub fn new(stream: TcpStream) -> RedisResult<Connection> {
+    pub(super) fn new(stream: TcpStream) -> RedisResult<Connection> {
         let reader = BufReader::new(stream.try_clone()?);
 
         Ok(Connection { conn: stream, reader })
     }
 
-    pub fn connect<A: ToSocketAddrs>(addr: A) -> RedisResult<Connection> {
+    pub(super) fn connect<A: ToSocketAddrs>(addr: A) -> RedisResult<Connection> {
         let stream = TcpStream::connect(addr)?;
 
         Self::new(stream)
     }
 
-    pub fn send(&mut self, cmd: Command) -> RedisResult<()> {
-        let send_data = cmd.to_vec();
-        self.conn.write_all(&send_data)?;
+    pub(super) fn send(&mut self, data: &[u8]) -> RedisResult<()> {
+        self.conn.write_all(data)?;
         Ok(())
     }
 
-    pub fn receive(&mut self) -> RedisResult<Reply> {
+    pub(super) fn receive(&mut self) -> RedisResult<Reply> {
         let mut buffer = Vec::new();
         self.reader.read_until(b'\n', &mut buffer)?;
         if buffer.len() < 3 {
