@@ -1,9 +1,10 @@
 [package]
-name = "redis-rs"
+name = "redisclient"
 version = "0.1.0"
 authors = ["liutao <liutao.rs@bytedance.com>"]
 edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
+keywords = ["redis", "database"]
+description = "Redis client for Rust"
+repository = "https://github.com/ltoddy/redis-rs"
+license = "MIT"
+readme = "README.md"
