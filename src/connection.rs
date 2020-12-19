@@ -108,13 +108,13 @@ impl Connection {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum SingleStrings {
     Okay,
     Pong,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Reply {
     SingleStrings(SingleStrings),
     Integers(Vec<u8>),

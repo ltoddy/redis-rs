@@ -112,6 +112,112 @@ impl RedisClient {
         <()>::deserialization(reply)
     }
 
+    // Hashes commands
+    /// Removes the specified fields from the hash stored at key.
+    ///
+    /// Return value: Integer reply
+    pub fn hdel<K>(&mut self, key: K, fields: Option<Vec<K>>) -> RedisResult<usize>
+    where
+        K: RedisSerializationProtocol,
+    {
+        let mut cmd = Command::new("HDEL");
+        cmd.arg(key);
+        if let Some(fields) = fields {
+            for field in fields {
+                cmd.arg(field);
+            }
+        }
+
+        let reply = self.execute(cmd)?;
+        <usize>::deserialization(reply)
+    }
+
+    /// Returns if field is an existing field in the hash stored at key.
+    ///
+    /// Return value: Integer reply
+    pub fn hexists<K, F>(&mut self, key: K, field: F) -> RedisResult<bool>
+    where
+        K: RedisSerializationProtocol,
+        F: RedisSerializationProtocol,
+    {
+        let mut cmd = Command::new("HEXISTS");
+        cmd.arg(key).arg(field);
+
+        let reply = self.execute(cmd)?;
+        <bool>::deserialization(reply)
+    }
+
+    /// Returns the value associated with field in the hash stored at key.
+    ///
+    /// Return value: Bulk string reply
+    pub fn hget<K, F, V>(&mut self, key: K, field: F) -> RedisResult<V>
+    where
+        K: RedisSerializationProtocol,
+        F: RedisSerializationProtocol,
+        V: RedisDeserializationProtocol,
+    {
+        let mut cmd = Command::new("HGET");
+        cmd.arg(key).arg(field);
+
+        let reply = self.execute(cmd)?;
+        <V>::deserialization(reply)
+    }
+
+    /// Returns all fields and values of the hash stored at key.
+    ///
+    /// Return value: Array reply
+    pub fn hgetall<K, M>(&mut self, key: K) -> RedisResult<M>
+    where
+        K: RedisSerializationProtocol,
+        M: RedisDeserializationProtocol,
+    {
+        let mut cmd = Command::new("HGETALL");
+        cmd.arg(key);
+
+        let reply = self.execute(cmd)?;
+        <M>::deserialization(reply)
+    }
+
+    pub fn hincrby(&mut self) {}
+
+    pub fn hincrbyfloat(&mut self) {}
+
+    pub fn hkeys(&mut self) {}
+
+    pub fn hlen(&mut self) {}
+
+    pub fn hmget(&mut self) {}
+
+    pub fn hmset(&mut self) {}
+
+    // TODO: arguments can be a Vec<(K, V)> or HashMap<K, V> or BTreeMap<K, V>
+    /// Sets field in the hash stored at key to value.
+    ///
+    /// Return value: Integer reply
+    pub fn hset<K, F, V>(&mut self, key: K, fvs: Vec<(F, V)>) -> RedisResult<usize>
+    where
+        K: RedisSerializationProtocol,
+        F: RedisSerializationProtocol,
+        V: RedisSerializationProtocol,
+    {
+        let mut cmd = Command::new("HSET");
+        cmd.arg(key);
+        for (field, value) in fvs {
+            cmd.arg(field).arg(value);
+        }
+
+        let reply = self.execute(cmd)?;
+        <usize>::deserialization(reply)
+    }
+
+    pub fn hsetnx(&mut self) {}
+
+    pub fn hstrlen(&mut self) {}
+
+    pub fn hvals(&mut self) {}
+
+    pub fn hscan(&mut self) {}
+
     // Strings commands
     pub fn append<K, V>(&mut self, key: K, value: V) -> RedisResult<u64>
     where
@@ -452,9 +558,7 @@ impl RedisClient {
         cmd.arg(key).arg(value);
 
         let reply = self.execute(cmd)?;
-        let res = <u8>::deserialization(reply)?;
-
-        Ok(res > 0)
+        <bool>::deserialization(reply)
     }
 
     /// Overwrites part of the string stored at key, starting at the specified offset, for the entire length of value.
