@@ -2,6 +2,7 @@ use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{TcpStream, ToSocketAddrs};
 
 use crate::client::Command;
+use crate::error::ErrorKind::FromServer;
 use crate::error::{ErrorKind::ResponseError, RedisError};
 use crate::RedisResult;
 
@@ -73,7 +74,7 @@ impl Connection {
     }
 
     fn read_errors(&mut self, buffer: Vec<u8>) -> RedisResult<Reply> {
-        Ok(Reply::Errors(buffer))
+        Err(RedisError::custom(FromServer, String::from_utf8(buffer)?))
     }
 
     fn read_integer(&mut self, buffer: Vec<u8>) -> RedisResult<Reply> {
@@ -82,7 +83,7 @@ impl Connection {
 
     fn read_bulk_strings(&mut self, size: i64) -> RedisResult<Reply> {
         if size < 0 {
-            // TODO: remove
+            // TODO
             return Ok(Reply::Nil);
         }
 
@@ -114,7 +115,6 @@ pub enum SingleStrings {
 #[derive(Debug)]
 pub enum Reply {
     SingleStrings(SingleStrings),
-    Errors(Vec<u8>),
     Integers(Vec<u8>),
     BulkStrings(Vec<u8>),
     Arrays(Vec<Reply>),

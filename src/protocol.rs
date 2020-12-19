@@ -1,5 +1,6 @@
 use crate::connection::{Reply, SingleStrings::Okay};
-use crate::error::{ErrorKind, RedisError};
+use crate::error::ErrorKind::TypeError;
+use crate::error::RedisError;
 use crate::RedisResult;
 
 pub trait RedisSerializationProtocol {
@@ -76,10 +77,9 @@ macro_rules! implement_deserialization_for_string {
                         Reply::SingleStrings(single) => {
                             match single { Okay => Ok(<$t>::new()) }
                         },
-                        Reply::Errors(data) => Err(RedisError::custom(ErrorKind::FromServer, String::from_utf8(data)?)),
                         Reply::BulkStrings(data) => Ok(<$t>::from_utf8(data)?),
                         Reply::Nil => Ok(<$t>::new()),
-                        _ => unreachable!(),
+                        _ => Err(RedisError::custom(TypeError, "miss type")),
                     }
                 }
             }
@@ -93,10 +93,9 @@ macro_rules! implement_deserialization_for_number {
             impl RedisDeserializationProtocol for $t {
                 fn deserialization(reply: Reply) -> RedisResult<Self> {
                     match reply {
-                        Reply::Errors(data) => Err(RedisError::custom(ErrorKind::FromServer, String::from_utf8(data)?)),
                         Reply::Integers(data) => Ok(String::from_utf8(data)?.parse::<$t>()?),
                         Reply::BulkStrings(data) => Ok(String::from_utf8(data)?.parse::<$t>()?),
-                        _ => unreachable!(),
+                        _ => Err(RedisError::custom(TypeError, "miss type")),
                     }
                 }
             }
@@ -109,6 +108,17 @@ implement_deserialization_for_string!(String);
 implement_serialization_for_number!(u8, i8, u16, i16, u32, i32, u64, i64, u128, i128, usize, isize, f32, f64);
 implement_deserialization_for_number!(u8, i8, u16, i16, u32, i32, u64, i64, u128, i128, usize, isize, f32, f64);
 implement_serialization_for_array!(Vec<u8>); // TODO
+
+impl RedisDeserializationProtocol for () {
+    fn deserialization(reply: Reply) -> RedisResult<Self> {
+        match reply {
+            Reply::SingleStrings(single) => match single {
+                Okay => Ok(()),
+            },
+            _ => Err(RedisError::custom(TypeError, "miss type")),
+        }
+    }
+}
 
 impl<T: RedisDeserializationProtocol> RedisDeserializationProtocol for Vec<T> {
     fn deserialization(reply: Reply) -> RedisResult<Self> {

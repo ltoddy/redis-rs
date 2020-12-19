@@ -51,8 +51,8 @@ impl RedisClient {
 
     pub fn ping(&mut self) -> RedisResult<()> {
         let cmd = Command::new("PING");
-        let _ = self.execute(cmd);
-        Ok(())
+        let reply = self.execute(cmd)?;
+        <()>::deserialization(reply)
     }
 
     pub fn append<K, V>(&mut self, key: K, value: V) -> RedisResult<u64>
@@ -160,7 +160,6 @@ impl RedisClient {
         K: RedisSerializationProtocol,
         V: RedisDeserializationProtocol,
     {
-        // TODO: use Result<Option<>>
         let mut cmd = Command::new("GET");
         cmd.arg(key);
 
@@ -202,7 +201,6 @@ impl RedisClient {
         K: RedisSerializationProtocol,
         V: ToString,
     {
-        // TODO: use Result<Option<>>
         let mut cmd = Command::new("GETSET");
         cmd.arg(key).arg(value.to_string());
 
@@ -277,9 +275,9 @@ impl RedisClient {
             cmd.arg(k).arg(v);
         }
 
-        let _ = self.execute(cmd)?;
-        // TODO: check Reply::Errors
-        Ok(())
+        let reply = self.execute(cmd)?;
+
+        <()>::deserialization(reply)
     }
 
     /// Sets the given keys to their respective values.
@@ -293,9 +291,9 @@ impl RedisClient {
             cmd.arg(k).arg(v);
         }
 
-        let _ = self.execute(cmd)?;
+        let reply = self.execute(cmd)?;
 
-        Ok(())
+        <()>::deserialization(reply)
     }
 
     /// PSETEX works exactly like SETEX with the sole difference that the expire time is specified in milliseconds instead of seconds.
@@ -307,9 +305,9 @@ impl RedisClient {
         let mut cmd = Command::new("PSETEX");
         cmd.arg(key).arg(milliseconds).arg(value);
 
-        let _ = self.execute(cmd)?; // TODO
+        let reply = self.execute(cmd)?;
 
-        Ok(())
+        <()>::deserialization(reply)
     }
 
     /// Set key to hold the string value.
@@ -345,9 +343,9 @@ impl RedisClient {
             }
         }
 
-        let _ = self.execute(cmd)?;
+        let reply = self.execute(cmd)?;
 
-        Ok(())
+        <()>::deserialization(reply)
     }
 
     /// Set key to hold the string value.
@@ -381,9 +379,9 @@ impl RedisClient {
         let mut cmd = Command::new("SETEX");
         cmd.arg(key).arg(seconds).arg(value);
 
-        let _ = self.execute(cmd)?;
+        let reply = self.execute(cmd)?;
 
-        Ok(())
+        <()>::deserialization(reply)
     }
 
     pub fn setnx<K, V>(&mut self, key: K, value: V) -> RedisResult<bool>
