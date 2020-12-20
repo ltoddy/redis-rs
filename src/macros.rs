@@ -21,3 +21,24 @@ macro_rules! hash_map {
         hash_map!($($key => $value),*)
     };
 }
+
+#[macro_export]
+macro_rules! btree_map {
+    () => { std::collections::BTreeMap::new() };
+
+    ($key: expr => $value: expr) => {
+        let mut map = std::collections::BTreeMap::new();
+        map.insert($key, $value);
+        map
+    };
+
+    ($($key: expr => $value: expr),*) => {
+        {
+            use std::iter::FromIterator;
+            BTreeMap::from_iter(vec![$(($key, $value)),*])
+        }
+    };
+    ($($key: expr => $value: expr,)*) => {
+        btree_map!($($key => $value),*)
+    };
+}
