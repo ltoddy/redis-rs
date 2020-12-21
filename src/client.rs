@@ -67,6 +67,14 @@ impl RedisClient {
         Ok(client)
     }
 
+    // TODO
+    pub fn flushall(&mut self) -> RedisResult<()> {
+        let cmd = Command::new("FLUSHALL");
+
+        let reply = self.execute(cmd)?;
+        <()>::deserialization(reply)
+    }
+
     // Connection commands
     /// The AUTH command authenticates the current connection
     pub fn auth(&mut self, password: String) -> RedisResult<()> {
@@ -116,16 +124,14 @@ impl RedisClient {
     /// Removes the specified fields from the hash stored at key.
     ///
     /// Return value: Integer reply
-    pub fn hdel<K>(&mut self, key: K, fields: Option<Vec<K>>) -> RedisResult<usize>
+    pub fn hdel<K>(&mut self, key: K, fields: Vec<K>) -> RedisResult<usize>
     where
         K: RedisSerializationProtocol,
     {
         let mut cmd = Command::new("HDEL");
         cmd.arg(key);
-        if let Some(fields) = fields {
-            for field in fields {
-                cmd.arg(field);
-            }
+        for field in fields {
+            cmd.arg(field);
         }
 
         let reply = self.execute(cmd)?;
@@ -178,45 +184,168 @@ impl RedisClient {
         <M>::deserialization(reply)
     }
 
-    pub fn hincrby(&mut self) {}
+    /// Increments the number stored at field in the hash stored at key by increment.
+    ///
+    /// Return value: Integer value
+    pub fn hincrby<K, F>(&mut self, key: K, field: F, increment: i64) -> RedisResult<i64>
+    where
+        K: RedisSerializationProtocol,
+        F: RedisSerializationProtocol,
+    {
+        let mut cmd = Command::new("HINCRBY");
+        cmd.arg(key).arg(field).arg(increment);
 
-    pub fn hincrbyfloat(&mut self) {}
+        let reply = self.execute(cmd)?;
+        <i64>::deserialization(reply)
+    }
 
-    pub fn hkeys(&mut self) {}
+    /// Increment the specified field of a hash stored at key, and representing a floating point number, by the specified increment.
+    ///
+    /// Return value: Bulk string reply
+    pub fn hincrbyfloat<K, F>(&mut self, key: K, field: F, increment: f64) -> RedisResult<f64>
+    where
+        K: RedisSerializationProtocol,
+        F: RedisSerializationProtocol,
+    {
+        let mut cmd = Command::new("HINCRBYFLOAT");
+        cmd.arg(key).arg(field).arg(increment);
 
-    pub fn hlen(&mut self) {}
+        let reply = self.execute(cmd)?;
+        <f64>::deserialization(reply)
+    }
 
-    pub fn hmget(&mut self) {}
+    /// Returns all field names in the hash stored at key.
+    ///
+    /// Return value: Array reply
+    pub fn hkeys<K, V>(&mut self, key: K) -> RedisResult<Vec<V>>
+    where
+        K: RedisSerializationProtocol,
+        V: RedisDeserializationProtocol,
+    {
+        let mut cmd = Command::new("HKEYS");
+        cmd.arg(key);
 
-    pub fn hmset(&mut self) {}
+        let reply = self.execute(cmd)?;
+        <Vec<V>>::deserialization(reply)
+    }
 
-    // TODO: arguments can be a Vec<(K, V)> or HashMap<K, V> or BTreeMap<K, V>
-    /// Sets field in the hash stored at key to value.
+    /// Returns the number of fields contained in the hash stored at key.
     ///
     /// Return value: Integer reply
-    pub fn hset<K, F, V>(&mut self, key: K, fvs: Vec<(F, V)>) -> RedisResult<usize>
+    pub fn hlen<K>(&mut self, key: K) -> RedisResult<u64>
+    where
+        K: RedisSerializationProtocol,
+    {
+        let mut cmd = Command::new("HLEN");
+        cmd.arg(key);
+
+        let reply = self.execute(cmd)?;
+        <u64>::deserialization(reply)
+    }
+
+    /// Returns the values associated with the specified fields in the hash stored at key.
+    ///
+    /// Return value: Array reply
+    pub fn hmget<K, F, V>(&mut self, key: K, fields: Vec<F>) -> RedisResult<Vec<V>>
+    where
+        K: RedisSerializationProtocol,
+        F: RedisSerializationProtocol,
+        V: RedisDeserializationProtocol,
+    {
+        let mut cmd = Command::new("HMGET");
+        cmd.arg(key);
+        for field in fields {
+            cmd.arg(field);
+        }
+
+        let reply = self.execute(cmd)?;
+        <Vec<V>>::deserialization(reply)
+    }
+
+    /// Sets the specified fields to their respective values in the hash stored at key.
+    ///
+    /// Return values: Simple string reply
+    pub fn hmset<K, F, V>(&mut self, key: K, fvs: Vec<(F, V)>) -> RedisResult<()>
     where
         K: RedisSerializationProtocol,
         F: RedisSerializationProtocol,
         V: RedisSerializationProtocol,
     {
-        let mut cmd = Command::new("HSET");
+        let mut cmd = Command::new("HMSET");
         cmd.arg(key);
         for (field, value) in fvs {
             cmd.arg(field).arg(value);
         }
 
         let reply = self.execute(cmd)?;
+        <()>::deserialization(reply)
+    }
+
+    pub fn hscan(&mut self) {
+        todo!();
+    }
+
+    /// Sets field in the hash stored at key to value.
+    ///
+    /// Return value: Integer reply
+    pub fn hset<K, F, V>(&mut self, key: K, field: F, value: V) -> RedisResult<usize>
+    where
+        K: RedisSerializationProtocol,
+        F: RedisSerializationProtocol,
+        V: RedisSerializationProtocol,
+    {
+        let mut cmd = Command::new("HSET");
+        cmd.arg(key).arg(field).arg(value);
+
+        let reply = self.execute(cmd)?;
         <usize>::deserialization(reply)
     }
 
-    pub fn hsetnx(&mut self) {}
+    /// Sets field in the hash stored at key to value, only if field does not yet exist.
+    ///
+    /// Return value: Integer value
+    pub fn hsetnx<K, F, V>(&mut self, key: K, field: F, value: V) -> RedisResult<usize>
+    where
+        K: RedisSerializationProtocol,
+        F: RedisSerializationProtocol,
+        V: RedisSerializationProtocol,
+    {
+        let mut cmd = Command::new("HSETNX");
+        cmd.arg(key).arg(field).arg(value);
 
-    pub fn hstrlen(&mut self) {}
+        let reply = self.execute(cmd)?;
+        <usize>::deserialization(reply)
+    }
 
-    pub fn hvals(&mut self) {}
+    /// Returns the string length of the value associated with field in the hash stored at key.
+    ///
+    /// Return value: Integer reply
+    pub fn hstrlen<K, F>(&mut self, key: K, field: F) -> RedisResult<usize>
+    where
+        K: RedisSerializationProtocol,
+        F: RedisSerializationProtocol,
+    {
+        let mut cmd = Command::new("HSTRLEN");
+        cmd.arg(key).arg(field);
 
-    pub fn hscan(&mut self) {}
+        let reply = self.execute(cmd)?;
+        <usize>::deserialization(reply)
+    }
+
+    /// Returns all values in the hash stored at key.
+    ///
+    /// Return value: Array reply
+    pub fn hvals<K, V>(&mut self, key: K) -> RedisResult<Vec<V>>
+    where
+        K: RedisSerializationProtocol,
+        V: RedisDeserializationProtocol,
+    {
+        let mut cmd = Command::new("HVALS");
+        cmd.arg(key);
+
+        let reply = self.execute(cmd)?;
+        <Vec<V>>::deserialization(reply)
+    }
 
     // Strings commands
     pub fn append<K, V>(&mut self, key: K, value: V) -> RedisResult<u64>
