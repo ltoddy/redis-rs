@@ -58,8 +58,8 @@ pub fn test_hgetall() {
     assert_eq!(
         hash,
         hash_map! {
-            format!("field1") => format!("Hello"),
-            format!("field2") => format!("World"),
+            "field1".to_string() => "Hello".to_string(),
+            "field2".to_string() => "World".to_string(),
         }
     );
 
@@ -67,8 +67,8 @@ pub fn test_hgetall() {
     assert_eq!(
         map,
         btree_map! {
-            format!("field1") => format!("Hello"),
-            format!("field2") => format!("World"),
+            "field1".to_string() => "Hello".to_string(),
+            "field2".to_string() => "World".to_string(),
         }
     );
 
@@ -98,14 +98,14 @@ pub fn test_hincrbyfloat() {
     client.hset("mykey", "field", 10.50).unwrap();
 
     let value = client.hincrbyfloat("mykey", "field", 0.1).unwrap();
-    assert_eq!(value, 10.6);
+    assert!((value - 10.6).abs() < f64::EPSILON);
 
     let value = client.hincrbyfloat("mykey", "field", -5_f64).unwrap();
-    assert_eq!(value, 5.6);
+    assert!((value - 5.6).abs() < f64::EPSILON);
 
     client.hset("mykey", "field", 5.0e3).unwrap();
     let value = client.hincrbyfloat("mykey", "field", 2.0e2).unwrap();
-    assert_eq!(value, 5200_f64);
+    assert!((value - 5200_f64).abs() < f64::EPSILON);
 
     client.flushall().unwrap();
 }
@@ -119,7 +119,7 @@ pub fn test_hkeys() {
         .unwrap();
 
     let keys: Vec<String> = client.hkeys("myhash").unwrap();
-    assert_eq!(keys, vec![format!("field1"), format!("field2")]);
+    assert_eq!(keys, vec!["field1".to_string(), "field2".to_string()]);
 
     client.flushall().unwrap();
 }
@@ -149,7 +149,7 @@ pub fn test_hmget() {
 
     let values: Vec<String> = client.hmget("myhash", vec!["field1", "field2", "nofield"]).unwrap();
 
-    assert_eq!(values, vec![format!("Hello"), format!("World"), String::new()]);
+    assert_eq!(values, vec!["Hello".to_string(), "World".to_string(), String::new()]);
 
     client.flushall().unwrap();
 }
@@ -163,10 +163,10 @@ pub fn test_hmset() {
         .unwrap();
 
     let value: String = client.hget("myhash", "field1").unwrap();
-    assert_eq!(value, format!("Hello"));
+    assert_eq!(value, "Hello".to_string());
 
     let value: String = client.hget("myhash", "field2").unwrap();
-    assert_eq!(value, format!("World"));
+    assert_eq!(value, "World".to_string());
 
     client.flushall().unwrap();
 }
@@ -231,7 +231,7 @@ pub fn test_hvals() {
     client.hset("myhash", "field2", "World").unwrap();
 
     let values: Vec<String> = client.hvals("myhash").unwrap();
-    assert_eq!(values, vec![format!("Hello"), format!("World")]);
+    assert_eq!(values, vec!["Hello".to_string(), "World".to_string()]);
 
     client.flushall().unwrap();
 }
