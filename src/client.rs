@@ -366,6 +366,20 @@ impl RedisClient {
         <Vec<V>>::deserialization(reply)
     }
 
+    // keys command
+    pub fn del<K>(&mut self, keys: Vec<K>) -> RedisResult<usize>
+    where
+        K: RedisSerializationProtocol,
+    {
+        let mut cmd = Command::new("DEL");
+        for key in keys {
+            cmd.arg(key);
+        }
+
+        let reply = self.execute(cmd)?;
+        <usize>::deserialization(reply)
+    }
+
     // Strings commands
     pub fn append<K, V>(&mut self, key: K, value: V) -> RedisResult<u64>
     where
