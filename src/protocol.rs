@@ -28,9 +28,9 @@ macro_rules! implement_serialization_for_string {
                 fn serialization(&self) -> Vec<u8> {
                     let length = self.len();
                     let mut buf = Vec::new();
-                    buf.extend_from_slice(format!("${}\r\n", length).as_bytes());
-                    buf.extend_from_slice(self.as_bytes());
-                    buf.extend_from_slice(b"\r\n");
+                    buf.extend(format!("${}\r\n", length).as_bytes());
+                    buf.extend(self.as_bytes());
+                    buf.extend(b"\r\n");
                     buf
                 }
             }
@@ -46,9 +46,9 @@ macro_rules! implement_serialization_for_numbers {
                     let s = format!("{}", self);
                     let length = s.len();
                     let mut buf = Vec::new();
-                    buf.extend_from_slice(format!("${}\r\n", length).as_bytes());
-                    buf.extend_from_slice(s.as_bytes());
-                    buf.extend_from_slice(b"\r\n");
+                    buf.extend(format!("${}\r\n", length).as_bytes());
+                    buf.extend(s.as_bytes());
+                    buf.extend(b"\r\n");
                     buf
                 }
             }
@@ -63,10 +63,10 @@ macro_rules! implement_serialization_for_sequences {
                 fn serialization(&self) -> Vec<u8> {
                     let length = self.len();
                     let mut buf = Vec::new();
-                    buf.extend_from_slice(b"*1\r\n");
-                    buf.extend_from_slice(format!("${}\r\n", length).as_bytes());
-                    buf.extend_from_slice(self);
-                    buf.extend_from_slice(b"\r\n");
+                    buf.extend(b"*1\r\n");
+                    buf.extend(format!("${}\r\n", length).as_bytes());
+                    buf.extend(self);
+                    buf.extend(b"\r\n");
                     buf
                 }
             }

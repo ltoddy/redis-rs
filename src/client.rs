@@ -19,16 +19,18 @@ impl Command {
     }
 
     fn arg<T: RedisSerializationProtocol>(&mut self, arg: T) -> &mut Self {
-        self.args.extend_from_slice(arg.serialization().as_slice());
+        self.args.extend(arg.serialization());
         self.count += 1;
         self
     }
 
-    fn to_vec(&self) -> Vec<u8> {
+    fn into_vec(self) -> Vec<u8> {
+        let Command { cmd, args, count } = self;
+
         let mut buf = Vec::new();
-        buf.extend_from_slice(format!("*{}\r\n", self.count).as_bytes());
-        buf.extend_from_slice(self.cmd.serialization().as_slice());
-        buf.extend_from_slice(&self.args);
+        buf.extend(Vec::from(format!("*{}\r\n", count)));
+        buf.extend(cmd.serialization());
+        buf.extend(args);
         buf
     }
 }
@@ -736,7 +738,7 @@ impl RedisClient {
 
     fn execute(&mut self, cmd: Command) -> RedisResult<Reply> {
         let mut conn = self.pool.get()?;
-        conn.send(&cmd.to_vec())?;
+        conn.send(&cmd.into_vec())?;
         let reply = conn.receive()?;
         self.pool.put(conn);
         Ok(reply)
