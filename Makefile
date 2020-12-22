@@ -1,4 +1,4 @@
-.PHONY: build test lint
+.PHONY: build test lint bench
 
 build:
 	cargo build
@@ -7,5 +7,7 @@ test:
 	cargo test -- --test-threads=1
 
 lint:
-	@rustup component add clippy 2> /dev/null
 	cargo clippy --release --all --tests -- -D clippy::all -D warnings
+
+bench:
+	cargo +nightly bench -- --test-threads=1

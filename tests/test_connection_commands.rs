@@ -12,6 +12,5 @@ pub fn test_echo() {
 pub fn test_ping() {
     let mut client = RedisClient::new().unwrap();
 
-    let v = client.ping().unwrap();
-    assert_eq!(v, ());
+    let _ = client.ping().unwrap();
 }
