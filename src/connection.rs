@@ -1,11 +1,11 @@
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{TcpStream, ToSocketAddrs};
 
-use crate::error::ErrorKind::FromServer;
+use crate::error::ErrorKind::{AuthenticationFailed, FromServer};
 use crate::error::{ErrorKind::ResponseError, RedisError};
 use crate::RedisResult;
 
-pub(super) struct Connection {
+pub(crate) struct Connection {
     conn: TcpStream,
     reader: BufReader<TcpStream>,
 }
@@ -26,18 +26,18 @@ impl Connection {
         Ok(Connection { conn: stream, reader })
     }
 
-    pub(super) fn connect<A: ToSocketAddrs>(addr: A) -> RedisResult<Connection> {
+    pub(crate) fn connect<A: ToSocketAddrs>(addr: A) -> RedisResult<Connection> {
         let stream = TcpStream::connect(addr)?;
 
         Self::new(stream)
     }
 
-    pub(super) fn send(&mut self, data: &[u8]) -> RedisResult<()> {
+    pub(crate) fn send(&mut self, data: &[u8]) -> RedisResult<()> {
         self.conn.write_all(data)?;
         Ok(())
     }
 
-    pub(super) fn receive(&mut self) -> RedisResult<Reply> {
+    pub(crate) fn receive(&mut self) -> RedisResult<Reply> {
         let mut buffer = Vec::new();
         self.reader.read_until(b'\n', &mut buffer)?;
         if buffer.len() < 3 {
@@ -75,7 +75,11 @@ impl Connection {
     }
 
     fn read_errors(&mut self, buffer: Vec<u8>) -> RedisResult<Reply> {
-        Err(RedisError::custom(FromServer, String::from_utf8(buffer)?))
+        let error = String::from_utf8_lossy(&buffer).into_owned();
+        if error.starts_with("WRONGPASS") {
+            return Err(RedisError::custom(AuthenticationFailed, error));
+        }
+        Err(RedisError::custom(FromServer, error))
     }
 
     fn read_integer(&mut self, buffer: Vec<u8>) -> RedisResult<Reply> {

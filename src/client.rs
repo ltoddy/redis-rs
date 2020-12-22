@@ -48,6 +48,7 @@ impl RedisClient {
         let RedisConfig {
             address,
             database,
+            username,
             password,
             pool_capacity,
         } = config;
@@ -56,8 +57,8 @@ impl RedisClient {
             pool: ConnectionPool::new(pool_capacity, address),
         };
 
-        if !password.is_empty() {
-            client.auth(password)?;
+        if let Some(password) = password {
+            client.auth(username, password)?;
         }
 
         if database > 0 {
@@ -77,9 +78,17 @@ impl RedisClient {
 
     // Connection commands
     /// The AUTH command authenticates the current connection
-    pub fn auth(&mut self, password: String) -> RedisResult<()> {
+    ///
+    /// Return value: Simple string reply
+    pub fn auth<S>(&mut self, username: Option<S>, password: S) -> RedisResult<()>
+    where
+        S: ToString,
+    {
         let mut cmd = Command::new("AUTH");
-        cmd.arg(password);
+        if let Some(username) = username {
+            cmd.arg(username.to_string());
+        }
+        cmd.arg(password.to_string());
 
         let reply = self.execute(cmd)?;
         <()>::deserialization(reply)
