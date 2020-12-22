@@ -16,7 +16,7 @@
 //! extern crate redisclient;
 //!
 //! use redisclient::RedisResult;
-//! use redisclient::client::RedisClient;
+//! use redisclient::RedisClient;
 //!
 //! fn run() -> RedisResult<()> {
 //!     let mut client = RedisClient::new()?;
@@ -40,6 +40,7 @@ pub mod macros;
 pub mod pool;
 pub mod protocol;
 
-use crate::error::RedisError;
+pub use client::RedisClient;
+pub use error::{ErrorKind, RedisError};
 
 pub type RedisResult<T> = std::result::Result<T, RedisError>;

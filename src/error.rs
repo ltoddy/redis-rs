@@ -11,7 +11,7 @@ pub enum ErrorKind {
     FromServer,
 }
 
-pub enum Repr {
+enum Repr {
     Io(std::io::Error),
     Custom(ErrorKind, Cow<'static, str>),
 }

@@ -1,4 +1,4 @@
-use redisclient::client::RedisClient;
+use redisclient::RedisClient;
 
 #[test]
 pub fn test_echo() {

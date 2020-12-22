@@ -4,7 +4,7 @@ extern crate test;
 
 use test::Bencher;
 
-use redisclient::client::RedisClient;
+use redisclient::RedisClient;
 
 #[bench]
 fn bench_strings_command(b: &mut Bencher) {

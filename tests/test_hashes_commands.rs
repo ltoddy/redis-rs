@@ -1,4 +1,4 @@
-use redisclient::client::RedisClient;
+use redisclient::RedisClient;
 use redisclient::{btree_map, hash_map};
 
 use std::collections::{BTreeMap, HashMap};
