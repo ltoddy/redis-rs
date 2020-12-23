@@ -120,3 +120,68 @@ pub fn test_pexpire() {
 
     client.flushall().unwrap();
 }
+
+#[test]
+#[ignore]
+pub fn test_pttl() {
+    let mut client = RedisClient::new().unwrap();
+
+    client.simple_set("mykey", "Hello").unwrap();
+    client.expire("mykey", 1).unwrap();
+
+    let res = client.pttl("mykey").unwrap();
+    assert_eq!(res, 999);
+
+    client.flushall().unwrap();
+}
+
+#[test]
+pub fn test_rename() {
+    let mut client = RedisClient::new().unwrap();
+
+    client.simple_set("mykey", "Hello").unwrap();
+    client.rename("mykey", "myotherkey").unwrap();
+
+    let value: String = client.get("myotherkey").unwrap();
+    assert_eq!(value, "Hello".to_string());
+
+    client.flushall().unwrap();
+}
+
+#[test]
+pub fn test_renamenx() {
+    let mut client = RedisClient::new().unwrap();
+
+    client.simple_set("mykey", "Hello").unwrap();
+    client.simple_set("myotherkey", "World").unwrap();
+
+    assert!(!client.renamenx("mykey", "myotherkey").unwrap());
+    let value: String = client.get("myotherkey").unwrap();
+
+    assert_eq!(value, "World".to_string());
+    client.flushall().unwrap();
+}
+
+#[test]
+pub fn test_touch() {
+    let mut client = RedisClient::new().unwrap();
+
+    client.simple_set("key1", "Hello").unwrap();
+    client.simple_set("key2", "World").unwrap();
+
+    let amount = client.touch(vec!["key1", "key2"]).unwrap();
+
+    assert_eq!(amount, 2);
+    client.flushall().unwrap();
+}
+
+#[test]
+pub fn test_ttl() {
+    let mut client = RedisClient::new().unwrap();
+    client.simple_set("mykey", "Hello").unwrap();
+    client.expire("mykey", 10).unwrap();
+
+    let rest = client.ttl("mykey").unwrap();
+    assert_eq!(rest, 10);
+    client.flushall().unwrap();
+}

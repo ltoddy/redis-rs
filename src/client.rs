@@ -471,6 +471,54 @@ impl RedisClient {
         <i64>::deserialization(reply)
     }
 
+    /// Return a random key from the currently selected database.
+    ///
+    /// Return value: Bulk string reply
+    pub fn randomkey(&mut self) -> RedisResult<String> {
+        let cmd = Command::new("RANDOMKEY");
+        let reply = self.execute(cmd)?;
+        <String>::deserialization(reply)
+    }
+
+    /// Renames key to newkey. It returns an error when key does not exist.
+    ///
+    /// Return value: Simple string reply
+    pub fn rename<K>(&mut self, key: K, newkey: K) -> RedisResult<()>
+    where
+        K: RedisSerializationProtocol,
+    {
+        let cmd = command!("RENAME"; args => key, newkey);
+        let reply = self.execute(cmd)?;
+        <()>::deserialization(reply)
+    }
+
+    /// Renames key to newkey if newkey does not yet exist. It returns an error when key does not exist.
+    ///
+    /// Return value: Integer reply
+    pub fn renamenx<K>(&mut self, key: K, newkey: K) -> RedisResult<bool>
+    where
+        K: RedisSerializationProtocol,
+    {
+        let cmd = command!("RENAMENX"; args => key, newkey);
+        let reply = self.execute(cmd)?;
+        <bool>::deserialization(reply)
+    }
+
+    /// Alters the last access time of a key(s). A key is ignored if it does not exist.
+    ///
+    /// Return value: Integer reply
+    pub fn touch<K>(&mut self, keys: Vec<K>) -> RedisResult<isize>
+    where
+        K: RedisSerializationProtocol,
+    {
+        let mut cmd = Command::new("TOUCH");
+        for key in keys {
+            cmd.arg(key);
+        }
+        let reply = self.execute(cmd)?;
+        <isize>::deserialization(reply)
+    }
+
     /// Returns the remaining time to live of a key that has a timeout.
     ///
     /// Return value: Integer reply

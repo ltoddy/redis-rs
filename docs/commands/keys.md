@@ -16,3 +16,12 @@ see more: https://redis.io/commands#generic
 - [x] PEXPIRE key milliseconds
 - [ ] PEXPIREAT key milliseconds-timestamp
 - [x] PTTL key
+- [x] RANDOMKEY
+- [x] RENAME key newkey
+- [x] RENAMENX key newkey
+- [ ] RESTORE key ttl serialized-value [REPLACE] [ABSTTL] [IDLETIME seconds] [FREQ frequency]
+- [ ] SCAN cursor [MATCH pattern] [COUNT count] [TYPE type]
+- [ ] SORT key [BY pattern] [LIMIT offset count] [GET pattern [GET pattern ...]] [ASC|DESC] [ALPHA] [STORE destination]
+- [ ] TOUCH key [key ...]
+
+
