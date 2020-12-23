@@ -367,6 +367,16 @@ impl RedisClient {
     }
 
     // keys command
+    /// This command copies the value stored at the source key to the destination key.
+    ///
+    /// Return value: Integer reply
+    pub fn copy(&mut self) -> RedisResult<()> {
+        todo!()
+    }
+
+    /// Removes the specified keys. A key is ignored if it does not exist.
+    ///
+    /// Return value: Integer reply
     pub fn del<K>(&mut self, keys: Vec<K>) -> RedisResult<usize>
     where
         K: RedisSerializationProtocol,
@@ -378,6 +388,133 @@ impl RedisClient {
 
         let reply = self.execute(cmd)?;
         <usize>::deserialization(reply)
+    }
+
+    /// Serialize the value stored at key in a Redis-specific format and return it to the user.
+    ///
+    /// Return value: Bulk string reply
+    #[allow(unused_variables)]
+    pub fn dump<K>(&mut self, key: K) -> RedisResult<String>
+    where
+        K: RedisSerializationProtocol,
+    {
+        // let mut cmd = Command::new("DUMP");
+        // cmd.arg(key);
+        //
+        // let reply = self.execute(cmd)?;
+        // <String>::deserialization(reply)
+        todo!()
+    }
+
+    /// Returns if key exists.
+    ///
+    /// Return value: Integer reply
+    pub fn exists<K>(&mut self, keys: Vec<K>) -> RedisResult<usize>
+    where
+        K: RedisSerializationProtocol,
+    {
+        let mut cmd = Command::new("EXISTS");
+        for key in keys {
+            cmd.arg(key);
+        }
+
+        let reply = self.execute(cmd)?;
+        <usize>::deserialization(reply)
+    }
+
+    /// Set a timeout on key. After the timeout has expired, the key will automatically be deleted.
+    ///
+    /// Return value: Integer reply
+    pub fn expire<K>(&mut self, key: K, seconds: usize) -> RedisResult<bool>
+    where
+        K: RedisSerializationProtocol,
+    {
+        let mut cmd = Command::new("EXPIRE");
+        cmd.arg(key).arg(seconds);
+
+        let reply = self.execute(cmd)?;
+        <bool>::deserialization(reply)
+    }
+
+    /// EXPIREAT has the same effect and semantic as EXPIRE, but instead of specifying the number of seconds representing the TTL, it takes an absolute Unix timestamp.
+    ///
+    /// Return value: Integer reply
+    #[allow(unused_variables)]
+    pub fn expireat<K>(&mut self, key: K, timestamp: u64) -> RedisResult<bool>
+    where
+        K: RedisSerializationProtocol,
+    {
+        todo!()
+    }
+
+    /// Returns all keys matching pattern.
+    ///
+    /// Return value: Array reply
+    pub fn keys<S>(&mut self, pattern: S) -> RedisResult<Vec<String>>
+    where
+        S: ToString,
+    {
+        let mut cmd = Command::new("KEYS");
+        cmd.arg(pattern.to_string());
+
+        let reply = self.execute(cmd)?;
+        <Vec<String>>::deserialization(reply)
+    }
+
+    /// Remove the existing timeout on key, turning the key from volatile to persistent.
+    ///
+    /// Return value: Integer reply
+    pub fn persist<K>(&mut self, key: K) -> RedisResult<bool>
+    where
+        K: RedisSerializationProtocol,
+    {
+        let mut cmd = Command::new("PERSIST");
+        cmd.arg(key);
+
+        let reply = self.execute(cmd)?;
+        <bool>::deserialization(reply)
+    }
+
+    /// This command works exactly like EXPIRE but the time to live of the key is specified in milliseconds instead of seconds.
+    ///
+    /// Return value: Integer reply
+    pub fn pexpire<K>(&mut self, key: K, milliseconds: u64) -> RedisResult<bool>
+    where
+        K: RedisSerializationProtocol,
+    {
+        let mut cmd = Command::new("PEXPIRE");
+        cmd.arg(key).arg(milliseconds);
+
+        let reply = self.execute(cmd)?;
+        <bool>::deserialization(reply)
+    }
+
+    /// Like TTL this command returns the remaining time to live of a key that has an expire set, with the sole difference that TTL returns the amount of remaining time in seconds while PTTL returns it in milliseconds.
+    ///
+    /// Return value: Integer reply
+    pub fn pttl<K>(&mut self, key: K) -> RedisResult<i64>
+    where
+        K: RedisSerializationProtocol,
+    {
+        let mut cmd = Command::new("PTTL");
+        cmd.arg(key);
+
+        let reply = self.execute(cmd)?;
+        <i64>::deserialization(reply)
+    }
+
+    /// Returns the remaining time to live of a key that has a timeout.
+    ///
+    /// Return value: Integer reply
+    pub fn ttl<K>(&mut self, key: K) -> RedisResult<isize>
+    where
+        K: RedisSerializationProtocol,
+    {
+        let mut cmd = Command::new("TTL");
+        cmd.arg(key);
+
+        let reply = self.execute(cmd)?;
+        <isize>::deserialization(reply)
     }
 
     // Strings commands
