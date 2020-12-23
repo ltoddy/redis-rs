@@ -101,7 +101,6 @@ impl RedisClient {
             cmd.arg(username.to_string());
         }
         cmd.arg(password.to_string());
-
         let reply = self.execute(cmd)?;
         <()>::deserialization(reply)
     }
@@ -114,7 +113,6 @@ impl RedisClient {
         S: ToString,
     {
         let cmd = command!("ECHO"; args => message.to_string());
-
         let reply = self.execute(cmd)?;
         <String>::deserialization(reply)
     }
@@ -141,9 +139,7 @@ impl RedisClient {
     ///
     /// Return value: Simple string reply
     pub fn select(&mut self, index: u8) -> RedisResult<()> {
-        let mut cmd = Command::new("SELECT");
-        cmd.arg(index);
-
+        let cmd = command!("SELECT"; args => index);
         let reply = self.execute(cmd)?;
         <()>::deserialization(reply)
     }
@@ -156,12 +152,10 @@ impl RedisClient {
     where
         K: RedisSerializationProtocol,
     {
-        let mut cmd = Command::new("HDEL");
-        cmd.arg(key);
+        let mut cmd = command!("HDEL"; args => key);
         for field in fields {
             cmd.arg(field);
         }
-
         let reply = self.execute(cmd)?;
         <usize>::deserialization(reply)
     }
@@ -190,7 +184,6 @@ impl RedisClient {
         V: RedisDeserializationProtocol,
     {
         let cmd = command!("HGET"; args => key, field);
-
         let reply = self.execute(cmd)?;
         <V>::deserialization(reply)
     }
@@ -204,7 +197,6 @@ impl RedisClient {
         M: RedisDeserializationProtocol,
     {
         let cmd = command!("HGETALL"; args => key);
-
         let reply = self.execute(cmd)?;
         <M>::deserialization(reply)
     }
@@ -217,9 +209,7 @@ impl RedisClient {
         K: RedisSerializationProtocol,
         F: RedisSerializationProtocol,
     {
-        let mut cmd = Command::new("HINCRBY");
-        cmd.arg(key).arg(field).arg(increment);
-
+        let cmd = command!("HINCRBY"; args => key, field, increment);
         let reply = self.execute(cmd)?;
         <i64>::deserialization(reply)
     }
@@ -232,9 +222,7 @@ impl RedisClient {
         K: RedisSerializationProtocol,
         F: RedisSerializationProtocol,
     {
-        let mut cmd = Command::new("HINCRBYFLOAT");
-        cmd.arg(key).arg(field).arg(increment);
-
+        let cmd = command!("HINCRBYFLOAT"; args => key, field, increment);
         let reply = self.execute(cmd)?;
         <f64>::deserialization(reply)
     }
@@ -247,9 +235,7 @@ impl RedisClient {
         K: RedisSerializationProtocol,
         V: RedisDeserializationProtocol,
     {
-        let mut cmd = Command::new("HKEYS");
-        cmd.arg(key);
-
+        let cmd = command!("HKEYS"; args => key);
         let reply = self.execute(cmd)?;
         <Vec<V>>::deserialization(reply)
     }
@@ -261,9 +247,7 @@ impl RedisClient {
     where
         K: RedisSerializationProtocol,
     {
-        let mut cmd = Command::new("HLEN");
-        cmd.arg(key);
-
+        let cmd = command!("HLEN"; args => key);
         let reply = self.execute(cmd)?;
         <u64>::deserialization(reply)
     }
@@ -277,12 +261,10 @@ impl RedisClient {
         F: RedisSerializationProtocol,
         V: RedisDeserializationProtocol,
     {
-        let mut cmd = Command::new("HMGET");
-        cmd.arg(key);
+        let mut cmd = command!("HMGET"; args => key);
         for field in fields {
             cmd.arg(field);
         }
-
         let reply = self.execute(cmd)?;
         <Vec<V>>::deserialization(reply)
     }
@@ -296,12 +278,10 @@ impl RedisClient {
         F: RedisSerializationProtocol,
         V: RedisSerializationProtocol,
     {
-        let mut cmd = Command::new("HMSET");
-        cmd.arg(key);
+        let mut cmd = command!("HMSET"; args => key);
         for (field, value) in fvs {
             cmd.arg(field).arg(value);
         }
-
         let reply = self.execute(cmd)?;
         <()>::deserialization(reply)
     }
@@ -319,9 +299,7 @@ impl RedisClient {
         F: RedisSerializationProtocol,
         V: RedisSerializationProtocol,
     {
-        let mut cmd = Command::new("HSET");
-        cmd.arg(key).arg(field).arg(value);
-
+        let cmd = command!("HSET"; args => key, field, value);
         let reply = self.execute(cmd)?;
         <usize>::deserialization(reply)
     }
@@ -335,9 +313,7 @@ impl RedisClient {
         F: RedisSerializationProtocol,
         V: RedisSerializationProtocol,
     {
-        let mut cmd = Command::new("HSETNX");
-        cmd.arg(key).arg(field).arg(value);
-
+        let cmd = command!("HSETNX"; args => key, field, value);
         let reply = self.execute(cmd)?;
         <usize>::deserialization(reply)
     }
@@ -350,9 +326,7 @@ impl RedisClient {
         K: RedisSerializationProtocol,
         F: RedisSerializationProtocol,
     {
-        let mut cmd = Command::new("HSTRLEN");
-        cmd.arg(key).arg(field);
-
+        let cmd = command!("HSTRLEN"; args => key, field);
         let reply = self.execute(cmd)?;
         <usize>::deserialization(reply)
     }
@@ -365,9 +339,7 @@ impl RedisClient {
         K: RedisSerializationProtocol,
         V: RedisDeserializationProtocol,
     {
-        let mut cmd = Command::new("HVALS");
-        cmd.arg(key);
-
+        let cmd = command!("HVALS"; args => key);
         let reply = self.execute(cmd)?;
         <Vec<V>>::deserialization(reply)
     }
@@ -435,9 +407,7 @@ impl RedisClient {
     where
         K: RedisSerializationProtocol,
     {
-        let mut cmd = Command::new("EXPIRE");
-        cmd.arg(key).arg(seconds);
-
+        let cmd = command!("EXPIRE"; args => key, seconds);
         let reply = self.execute(cmd)?;
         <bool>::deserialization(reply)
     }
@@ -460,9 +430,7 @@ impl RedisClient {
     where
         S: ToString,
     {
-        let mut cmd = Command::new("KEYS");
-        cmd.arg(pattern.to_string());
-
+        let cmd = command!("KEYS"; args => pattern.to_string());
         let reply = self.execute(cmd)?;
         <Vec<String>>::deserialization(reply)
     }
@@ -474,9 +442,7 @@ impl RedisClient {
     where
         K: RedisSerializationProtocol,
     {
-        let mut cmd = Command::new("PERSIST");
-        cmd.arg(key);
-
+        let cmd = command!("PERSIST"; args => key);
         let reply = self.execute(cmd)?;
         <bool>::deserialization(reply)
     }
@@ -488,9 +454,7 @@ impl RedisClient {
     where
         K: RedisSerializationProtocol,
     {
-        let mut cmd = Command::new("PEXPIRE");
-        cmd.arg(key).arg(milliseconds);
-
+        let cmd = command!("PEXPIRE"; args => key, milliseconds);
         let reply = self.execute(cmd)?;
         <bool>::deserialization(reply)
     }
@@ -502,9 +466,7 @@ impl RedisClient {
     where
         K: RedisSerializationProtocol,
     {
-        let mut cmd = Command::new("PTTL");
-        cmd.arg(key);
-
+        let cmd = command!("PTTL"; args => key);
         let reply = self.execute(cmd)?;
         <i64>::deserialization(reply)
     }
@@ -516,9 +478,7 @@ impl RedisClient {
     where
         K: RedisSerializationProtocol,
     {
-        let mut cmd = Command::new("TTL");
-        cmd.arg(key);
-
+        let cmd = command!("TTL"; args => key);
         let reply = self.execute(cmd)?;
         <isize>::deserialization(reply)
     }
@@ -529,11 +489,8 @@ impl RedisClient {
         K: RedisSerializationProtocol,
         V: RedisSerializationProtocol,
     {
-        let mut cmd = Command::new("APPEND");
-        cmd.arg(key).arg(value);
-
+        let cmd = command!("APPEND"; args => key, value);
         let reply = self.execute(cmd)?;
-
         <u64>::deserialization(reply)
     }
 
@@ -542,8 +499,7 @@ impl RedisClient {
     where
         K: RedisSerializationProtocol,
     {
-        let mut cmd = Command::new("BITCOUNT");
-        cmd.arg(key);
+        let mut cmd = command!("BITCOUNT"; args => key);
         if let Some(start) = start {
             cmd.arg(start);
         }
@@ -552,7 +508,6 @@ impl RedisClient {
         }
 
         let reply = self.execute(cmd)?;
-
         <u64>::deserialization(reply)
     }
 
@@ -562,8 +517,7 @@ impl RedisClient {
         K1: RedisSerializationProtocol,
         K2: RedisSerializationProtocol,
     {
-        let mut cmd = Command::new("BITOP");
-        cmd.arg(operation).arg(destkey);
+        let mut cmd = command!("BITOP"; args => operation, destkey);
         for key in keys {
             cmd.arg(key);
         }
@@ -584,8 +538,7 @@ impl RedisClient {
             ));
         }
 
-        let mut cmd = Command::new("BITPOS");
-        cmd.arg(key).arg(bit);
+        let mut cmd = command!("BITPOS"; args => key, bit);
         if let Some(start) = start {
             cmd.arg(start);
         }
@@ -602,11 +555,8 @@ impl RedisClient {
     where
         K: RedisSerializationProtocol,
     {
-        let mut cmd = Command::new("DECR");
-        cmd.arg(key);
-
+        let cmd = command!("DECR"; args => key);
         let reply = self.execute(cmd)?;
-
         <i64>::deserialization(reply)
     }
 
@@ -615,11 +565,8 @@ impl RedisClient {
     where
         K: RedisSerializationProtocol,
     {
-        let mut cmd = Command::new("DECRBY");
-        cmd.arg(key).arg(decrement);
-
+        let cmd = command!("DECRBY"; args => key, decrement);
         let reply = self.execute(cmd)?;
-
         <i64>::deserialization(reply)
     }
 
@@ -629,11 +576,8 @@ impl RedisClient {
         K: RedisSerializationProtocol,
         V: RedisDeserializationProtocol,
     {
-        let mut cmd = Command::new("GET");
-        cmd.arg(key);
-
+        let cmd = command!("GET"; args => key);
         let reply = self.execute(cmd)?;
-
         <V>::deserialization(reply)
     }
 
@@ -642,12 +586,8 @@ impl RedisClient {
     where
         K: RedisSerializationProtocol,
     {
-        let mut cmd = Command::new("GETBIT");
-        cmd.arg(key);
-        cmd.arg(offset);
-
+        let cmd = command!("GETBIT"; args => key, offset);
         let reply = self.execute(cmd)?;
-
         <u8>::deserialization(reply)
     }
 
@@ -656,11 +596,8 @@ impl RedisClient {
     where
         K: RedisSerializationProtocol,
     {
-        let mut cmd = Command::new("GETRANGE");
-        cmd.arg(key).arg(start).arg(end);
-
+        let cmd = command!("GETRANGE"; args => key, start, end);
         let reply = self.execute(cmd)?;
-
         <String>::deserialization(reply)
     }
 
@@ -670,11 +607,8 @@ impl RedisClient {
         K: RedisSerializationProtocol,
         V: ToString,
     {
-        let mut cmd = Command::new("GETSET");
-        cmd.arg(key).arg(value.to_string());
-
+        let cmd = command!("GETSET"; args => key, value.to_string());
         let reply = self.execute(cmd)?;
-
         <String>::deserialization(reply)
     }
 
@@ -683,11 +617,8 @@ impl RedisClient {
     where
         K: RedisSerializationProtocol,
     {
-        let mut cmd = Command::new("INCR");
-        cmd.arg(key);
-
+        let cmd = command!("INCR"; args => key);
         let reply = self.execute(cmd)?;
-
         <i64>::deserialization(reply)
     }
 
@@ -696,11 +627,8 @@ impl RedisClient {
     where
         K: RedisSerializationProtocol,
     {
-        let mut cmd = Command::new("INCRBY");
-        cmd.arg(key).arg(increment);
-
+        let cmd = command!("INCRBY"; args => key, increment);
         let reply = self.execute(cmd)?;
-
         <i64>::deserialization(reply)
     }
 
@@ -709,11 +637,8 @@ impl RedisClient {
     where
         K: RedisSerializationProtocol,
     {
-        let mut cmd = Command::new("INCRBYFLOAT");
-        cmd.arg(key).arg(increment);
-
+        let cmd = command!("INCRBYFLOAT"; args => key, increment);
         let reply = self.execute(cmd)?;
-
         <f64>::deserialization(reply)
     }
 
@@ -729,7 +654,6 @@ impl RedisClient {
         }
 
         let reply = self.execute(cmd)?;
-
         <Vec<V>>::deserialization(reply)
     }
 
@@ -745,7 +669,6 @@ impl RedisClient {
         }
 
         let reply = self.execute(cmd)?;
-
         <()>::deserialization(reply)
     }
 
@@ -761,7 +684,6 @@ impl RedisClient {
         }
 
         let reply = self.execute(cmd)?;
-
         <()>::deserialization(reply)
     }
 
@@ -771,11 +693,8 @@ impl RedisClient {
         K: RedisSerializationProtocol,
         V: RedisSerializationProtocol,
     {
-        let mut cmd = Command::new("PSETEX");
-        cmd.arg(key).arg(milliseconds).arg(value);
-
+        let cmd = command!("PSETEX"; args => key, milliseconds, value);
         let reply = self.execute(cmd)?;
-
         <()>::deserialization(reply)
     }
 
@@ -793,8 +712,7 @@ impl RedisClient {
         K: RedisSerializationProtocol,
         V: RedisSerializationProtocol,
     {
-        let mut cmd = Command::new("SET");
-        cmd.arg(key).arg(value);
+        let mut cmd = command!("SET"; args => key, value);
         if let Some(ex) = ex_seconds {
             cmd.arg("EX").arg(ex);
         }
@@ -813,7 +731,6 @@ impl RedisClient {
         }
 
         let reply = self.execute(cmd)?;
-
         <()>::deserialization(reply)
     }
 
@@ -831,11 +748,8 @@ impl RedisClient {
     where
         K: RedisSerializationProtocol,
     {
-        let mut cmd = Command::new("SETBIT");
-        cmd.arg(key).arg(offset).arg(value);
-
+        let cmd = command!("SETBIT"; args => key, offset, value);
         let reply = self.execute(cmd)?;
-
         <u8>::deserialization(reply)
     }
 
@@ -845,11 +759,8 @@ impl RedisClient {
         K: RedisSerializationProtocol,
         V: RedisSerializationProtocol,
     {
-        let mut cmd = Command::new("SETEX");
-        cmd.arg(key).arg(seconds).arg(value);
-
+        let cmd = command!("SETEX"; args => key, seconds, value);
         let reply = self.execute(cmd)?;
-
         <()>::deserialization(reply)
     }
 
@@ -859,9 +770,7 @@ impl RedisClient {
         K: RedisSerializationProtocol,
         V: RedisSerializationProtocol,
     {
-        let mut cmd = Command::new("SETNX");
-        cmd.arg(key).arg(value);
-
+        let cmd = command!("SETNX"; args => key, value);
         let reply = self.execute(cmd)?;
         <bool>::deserialization(reply)
     }
@@ -872,11 +781,8 @@ impl RedisClient {
         K: RedisSerializationProtocol,
         V: RedisSerializationProtocol,
     {
-        let mut cmd = Command::new("SETRANGE");
-        cmd.arg(key).arg(offset).arg(value);
-
+        let cmd = command!("SETRANGE"; args => key, offset, value);
         let reply = self.execute(cmd)?;
-
         <usize>::deserialization(reply)
     }
 
@@ -885,11 +791,8 @@ impl RedisClient {
     where
         K: RedisSerializationProtocol,
     {
-        let mut cmd = Command::new("STRLEN");
-        cmd.arg(key);
-
+        let cmd = command!("STRLEN"; args => key);
         let reply = self.execute(cmd)?;
-
         <u64>::deserialization(reply)
     }
 
