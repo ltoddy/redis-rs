@@ -35,6 +35,16 @@ impl Command {
     }
 }
 
+macro_rules! command {
+    ($name: expr; args => $($args: expr),*) => {
+        {
+            let mut cmd = Command::new($name);
+            $(cmd.arg($args);)*
+            cmd
+        }
+    };
+}
+
 pub struct RedisClient {
     pool: ConnectionPool,
 }
@@ -103,8 +113,7 @@ impl RedisClient {
     where
         S: ToString,
     {
-        let mut cmd = Command::new("ECHO");
-        cmd.arg(message.to_string());
+        let cmd = command!("ECHO"; args => message.to_string());
 
         let reply = self.execute(cmd)?;
         <String>::deserialization(reply)
@@ -165,8 +174,7 @@ impl RedisClient {
         K: RedisSerializationProtocol,
         F: RedisSerializationProtocol,
     {
-        let mut cmd = Command::new("HEXISTS");
-        cmd.arg(key).arg(field);
+        let cmd = command!("HEXISTS"; args => key, field);
 
         let reply = self.execute(cmd)?;
         <bool>::deserialization(reply)
@@ -181,8 +189,7 @@ impl RedisClient {
         F: RedisSerializationProtocol,
         V: RedisDeserializationProtocol,
     {
-        let mut cmd = Command::new("HGET");
-        cmd.arg(key).arg(field);
+        let cmd = command!("HGET"; args => key, field);
 
         let reply = self.execute(cmd)?;
         <V>::deserialization(reply)
@@ -196,8 +203,7 @@ impl RedisClient {
         K: RedisSerializationProtocol,
         M: RedisDeserializationProtocol,
     {
-        let mut cmd = Command::new("HGETALL");
-        cmd.arg(key);
+        let cmd = command!("HGETALL"; args => key);
 
         let reply = self.execute(cmd)?;
         <M>::deserialization(reply)
