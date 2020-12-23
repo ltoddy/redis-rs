@@ -1,4 +1,4 @@
-use redisclient::RedisClient;
+use redisclient::{DataType, RedisClient};
 
 #[test]
 pub fn test_del() {
@@ -183,5 +183,18 @@ pub fn test_ttl() {
 
     let rest = client.ttl("mykey").unwrap();
     assert_eq!(rest, 10);
+    client.flushall().unwrap();
+}
+
+#[test]
+pub fn test_type() {
+    let mut client = RedisClient::new().unwrap();
+
+    client.simple_set("key1", "value").unwrap();
+    // client.lpush("key2", "value");
+    // client.sadd("key3", "value");
+
+    assert_eq!(client.type_("key1").unwrap(), DataType::String);
+
     client.flushall().unwrap();
 }

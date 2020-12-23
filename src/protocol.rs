@@ -1,11 +1,10 @@
 use std::collections::{BTreeMap, HashMap};
 use std::hash::Hash;
 
-use crate::connection::{
-    Reply,
-    SingleStrings::{Okay, Pong},
-};
-use crate::error::ErrorKind::TypeError;
+use crate::DataType;
+
+use crate::connection::{Reply, SingleStrings};
+use crate::error::ErrorKind::{ResponseError, TypeError};
 use crate::error::RedisError;
 use crate::RedisResult;
 
@@ -81,7 +80,7 @@ macro_rules! implement_deserialization_for_string {
                 fn deserialization(reply: Reply) -> RedisResult<Self> {
                     match reply {
                         Reply::SingleStrings(single) => {
-                            match single { Okay | Pong => Ok(<$t>::new()) }
+                            match single { SingleStrings::Okay | SingleStrings::Pong => Ok(<$t>::new()), _ => Err(RedisError::custom(ResponseError, "wrong data type")) }
                         },
                         Reply::BulkStrings(data) => Ok(<$t>::from_utf8(data)?),
                         Reply::Nil => Ok(<$t>::new()),
@@ -167,7 +166,8 @@ impl RedisDeserializationProtocol for () {
     fn deserialization(reply: Reply) -> RedisResult<Self> {
         match reply {
             Reply::SingleStrings(single) => match single {
-                Okay | Pong => Ok(()),
+                SingleStrings::Okay | SingleStrings::Pong => Ok(()),
+                _ => Err(RedisError::custom(ResponseError, "wrong data type")),
             },
             _ => Err(RedisError::custom(TypeError, "miss type")),
         }
@@ -194,6 +194,20 @@ where
                 }
                 Ok(values)
             }
+            _ => Err(RedisError::custom(TypeError, "miss type")),
+        }
+    }
+}
+
+impl RedisDeserializationProtocol for DataType {
+    fn deserialization(reply: Reply) -> RedisResult<Self> {
+        match reply {
+            Reply::SingleStrings(single) => match single {
+                SingleStrings::String => Ok(DataType::String),
+                SingleStrings::List => Ok(DataType::List),
+                SingleStrings::Set => Ok(DataType::Set),
+                _ => Err(RedisError::custom(ResponseError, "wrong data type")),
+            },
             _ => Err(RedisError::custom(TypeError, "miss type")),
         }
     }

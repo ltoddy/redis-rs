@@ -16,9 +16,6 @@ impl Connection {
     const INTEGERS: u8 = b':';
     const BULK_STRINGS: u8 = b'$';
     const ARRAYS: u8 = b'*';
-    const OK: &'static [u8] = b"OK";
-    const PONG: &'static [u8] = b"PONG";
-    const NIL: &'static [u8] = b"NIL";
 
     fn new(stream: TcpStream) -> RedisResult<Connection> {
         let reader = BufReader::new(stream.try_clone()?);
@@ -43,7 +40,7 @@ impl Connection {
         if buffer.len() < 3 {
             return Err(RedisError::custom(ResponseError, "Empty redis response"));
         }
-        if buffer == Self::NIL {
+        if buffer == b"NIL" {
             // TODO: remove
             return Ok(Reply::Nil);
         }
@@ -66,10 +63,16 @@ impl Connection {
 
     fn read_single_strings(&mut self, buffer: Vec<u8>) -> RedisResult<Reply> {
         // TODO
-        if buffer == Self::OK {
+        if buffer == b"OK" {
             return Ok(Reply::SingleStrings(SingleStrings::Okay));
-        } else if buffer == Self::PONG {
+        } else if buffer == b"PONG" {
             return Ok(Reply::SingleStrings(SingleStrings::Pong));
+        } else if buffer == b"string" {
+            return Ok(Reply::SingleStrings(SingleStrings::String));
+        } else if buffer == b"list" {
+            return Ok(Reply::SingleStrings(SingleStrings::List));
+        } else if buffer == b"set" {
+            return Ok(Reply::SingleStrings(SingleStrings::Set));
         }
         Ok(Reply::SingleStrings(SingleStrings::Okay))
     }
@@ -116,6 +119,9 @@ impl Connection {
 pub enum SingleStrings {
     Okay,
     Pong,
+    String,
+    List,
+    Set,
 }
 
 #[derive(Debug, Clone)]

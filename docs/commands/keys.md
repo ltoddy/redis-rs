@@ -23,5 +23,5 @@ see more: https://redis.io/commands#generic
 - [ ] SCAN cursor [MATCH pattern] [COUNT count] [TYPE type]
 - [ ] SORT key [BY pattern] [LIMIT offset count] [GET pattern [GET pattern ...]] [ASC|DESC] [ALPHA] [STORE destination]
 - [ ] TOUCH key [key ...]
-
-
+- [x] TTL key
+- [x] TYPE key

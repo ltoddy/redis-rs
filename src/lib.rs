@@ -44,3 +44,10 @@ pub use client::RedisClient;
 pub use error::{ErrorKind, RedisError};
 
 pub type RedisResult<T> = std::result::Result<T, RedisError>;
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum DataType {
+    String,
+    List,
+    Set,
+}

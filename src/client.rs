@@ -3,7 +3,7 @@ use crate::connection::Reply;
 use crate::error::{ErrorKind, RedisError};
 use crate::pool::ConnectionPool;
 use crate::protocol::{RedisDeserializationProtocol, RedisSerializationProtocol};
-use crate::RedisResult;
+use crate::{DataType, RedisResult};
 
 struct Command {
     cmd: String,
@@ -529,6 +529,18 @@ impl RedisClient {
         let cmd = command!("TTL"; args => key);
         let reply = self.execute(cmd)?;
         <isize>::deserialization(reply)
+    }
+
+    /// Returns the string representation of the type of the value stored at key.
+    ///
+    /// Return value: Simple string reply
+    pub fn type_<K>(&mut self, key: K) -> RedisResult<DataType>
+    where
+        K: RedisSerializationProtocol,
+    {
+        let cmd = command!("TYPE"; args => key);
+        let reply = self.execute(cmd)?;
+        <DataType>::deserialization(reply)
     }
 
     // Strings commands
