@@ -633,6 +633,22 @@ impl RedisClient {
         <usize>::deserialization(reply)
     }
 
+    /// Inserts specified values at the head of the list stored at key, only if key already exists and holds a list.
+    ///
+    /// Return value: Integer value
+    pub fn lpushx<K, E>(&mut self, key: K, elements: Vec<E>) -> RedisResult<usize>
+    where
+        K: RedisSerializationProtocol,
+        E: RedisSerializationProtocol,
+    {
+        let mut cmd = command!("LPUSHX"; args => key);
+        for element in elements {
+            cmd.arg(element);
+        }
+        let reply = self.execute(cmd)?;
+        <usize>::deserialization(reply)
+    }
+
     /// Returns the specified elements of the list stored at key.
     ///
     /// Return value: Array reply
@@ -644,6 +660,32 @@ impl RedisClient {
         let cmd = command!("LRANGE"; args => key, start, end);
         let reply = self.execute(cmd)?;
         <Vec<E>>::deserialization(reply)
+    }
+
+    /// Removes the first count occurrences of elements equal to element from the list stored at key.
+    ///
+    /// Return value: Integer reply
+    pub fn lrem<K, E>(&mut self, key: K, count: isize, element: E) -> RedisResult<usize>
+    where
+        K: RedisSerializationProtocol,
+        E: RedisSerializationProtocol,
+    {
+        let cmd = command!("LREM"; args => key, count, element);
+        let reply = self.execute(cmd)?;
+        <usize>::deserialization(reply)
+    }
+
+    /// Sets the list element at index to element.
+    ///
+    /// Return value: Simple string reply
+    pub fn lset<K, E>(&mut self, key: K, index: isize, element: E) -> RedisResult<()>
+    where
+        K: RedisSerializationProtocol,
+        E: RedisSerializationProtocol,
+    {
+        let cmd = command!("LSET"; args => key, index, element);
+        let reply = self.execute(cmd)?;
+        <()>::deserialization(reply)
     }
 
     /// Insert all the specified values at the tail of the list stored at key.
