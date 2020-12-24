@@ -45,6 +45,12 @@ macro_rules! command {
     };
 }
 
+// TODO: remove
+pub enum ListBeforeOrAfter {
+    Before,
+    After,
+}
+
 pub struct RedisClient {
     pool: ConnectionPool,
 }
@@ -554,6 +560,103 @@ impl RedisClient {
         let mut cmd = Command::new("UNLINK");
         for key in keys {
             cmd.arg(key);
+        }
+        let reply = self.execute(cmd)?;
+        <usize>::deserialization(reply)
+    }
+
+    // Lists commands
+    /// Returns the element at index index in the list stored at key.
+    ///
+    /// Return value: Bulk string reply
+    pub fn lindex<K, V>(&mut self, key: K, index: isize) -> RedisResult<V>
+    where
+        K: RedisSerializationProtocol,
+        V: RedisDeserializationProtocol,
+    {
+        let cmd = command!("LINDEX"; args => key, index);
+        let reply = self.execute(cmd)?;
+        <V>::deserialization(reply)
+    }
+
+    /// Inserts element in the list stored at key either before or after the reference value pivot.
+    ///
+    /// Return value: Integer reply
+    pub fn linsert<K, E>(&mut self, key: K, operator: ListBeforeOrAfter, pivot: E, element: E) -> RedisResult<usize>
+    where
+        K: RedisSerializationProtocol,
+        E: RedisSerializationProtocol,
+    {
+        let cmd = command!("LINSERT"; args => key, operator, pivot, element);
+        let reply = self.execute(cmd)?;
+        <usize>::deserialization(reply)
+    }
+
+    /// Returns the length of the list stored at key.
+    ///
+    /// Return value: Integer reply
+    pub fn llen<K>(&mut self, key: K) -> RedisResult<usize>
+    where
+        K: RedisSerializationProtocol,
+    {
+        let cmd = command!("LLEN"; args => key);
+        let reply = self.execute(cmd)?;
+        <usize>::deserialization(reply)
+    }
+
+    /// Removes and returns the first element of the list stored at key.
+    ///
+    /// Return value: Bulk string reply
+    pub fn lpop<K, E>(&mut self, key: K) -> RedisResult<E>
+    where
+        K: RedisSerializationProtocol,
+        E: RedisDeserializationProtocol,
+    {
+        let cmd = command!("LPOP"; args => key);
+        let reply = self.execute(cmd)?;
+        <E>::deserialization(reply)
+    }
+
+    /// Insert all the specified values at the head of the list stored at key.
+    ///
+    /// Retrun value: Integer reply
+    pub fn lpush<K, E>(&mut self, key: K, elements: Vec<E>) -> RedisResult<usize>
+    where
+        K: RedisSerializationProtocol,
+        E: RedisSerializationProtocol,
+    {
+        let mut cmd = command!("LPUSH"; args => key);
+        for element in elements {
+            cmd.arg(element);
+        }
+        let reply = self.execute(cmd)?;
+        <usize>::deserialization(reply)
+    }
+
+    /// Returns the specified elements of the list stored at key.
+    ///
+    /// Return value: Array reply
+    pub fn lrange<K, E>(&mut self, key: K, start: isize, end: isize) -> RedisResult<Vec<E>>
+    where
+        K: RedisSerializationProtocol,
+        E: RedisDeserializationProtocol,
+    {
+        let cmd = command!("LRANGE"; args => key, start, end);
+        let reply = self.execute(cmd)?;
+        <Vec<E>>::deserialization(reply)
+    }
+
+    /// Insert all the specified values at the tail of the list stored at key.
+    ///
+    /// Return value: Integer value
+    pub fn rpush<K, E>(&mut self, key: K, elements: Vec<E>) -> RedisResult<usize>
+    where
+        K: RedisSerializationProtocol,
+        E: RedisSerializationProtocol,
+    {
+        let mut cmd = command!("RPUSH"; args => key);
+        for element in elements {
+            cmd.arg(element);
         }
         let reply = self.execute(cmd)?;
         <usize>::deserialization(reply)

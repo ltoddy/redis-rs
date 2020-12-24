@@ -3,6 +3,7 @@ use std::hash::Hash;
 
 use crate::DataType;
 
+use crate::client::ListBeforeOrAfter;
 use crate::connection::{Reply, SingleStrings};
 use crate::error::ErrorKind::{ResponseError, TypeError};
 use crate::error::RedisError;
@@ -151,6 +152,15 @@ implement_deserialization_for_maps!(HashMap, BTreeMap);
 // 1. Sequence: Vec, VecDequeue, LinkedList
 // 2. Maps: HashMap, BTreeMap,
 // 3. Sets: HashSet, BTreeSet
+
+impl RedisSerializationProtocol for ListBeforeOrAfter {
+    fn serialization(&self) -> Vec<u8> {
+        match self {
+            ListBeforeOrAfter::Before => "BEFORE".serialization(),
+            ListBeforeOrAfter::After => "AFTER".serialization(),
+        }
+    }
+}
 
 impl<K, V> RedisSerializationProtocol for HashMap<K, V>
 where
