@@ -688,6 +688,19 @@ impl RedisClient {
         <()>::deserialization(reply)
     }
 
+    /// Removes and returns the last element of the list stored at key.
+    ///
+    /// Return value: Bulk string reply
+    pub fn rpop<K, E>(&mut self, key: K) -> RedisResult<E>
+    where
+        K: RedisSerializationProtocol,
+        E: RedisDeserializationProtocol,
+    {
+        let cmd = command!("RPOP"; args => key);
+        let reply = self.execute(cmd)?;
+        <E>::deserialization(reply)
+    }
+
     /// Insert all the specified values at the tail of the list stored at key.
     ///
     /// Return value: Integer value

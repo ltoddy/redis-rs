@@ -18,7 +18,7 @@ see more: https://redis.io/commands#list
 - [x] LREM key count element
 - [x] LSET key index element
 - [ ] LTRIM key start stop
-- [ ] RPOP key
+- [x] RPOP key
 - [ ] RPOPLPUSH source destination
 - [x] RPUSH key element [element ...]
 - [ ] RPUSHX key element [element ...]
