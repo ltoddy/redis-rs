@@ -146,3 +146,17 @@ pub fn test_lset() {
 
     client.flushall().unwrap();
 }
+
+#[test]
+pub fn rpop() {
+    let mut client = RedisClient::new().unwrap();
+
+    client.rpush("mylist", vec!["one", "two", "three"]).unwrap();
+    let element: String = client.rpop("mylist").unwrap();
+    assert_eq!(element, "three".to_string());
+
+    let elements: Vec<String> = client.lrange("mylist", 0, -1).unwrap();
+    assert_eq!(elements, vec!["one".to_string(), "two".to_string()]);
+
+    client.flushall().unwrap();
+}
