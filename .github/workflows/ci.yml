@@ -1,0 +1,30 @@
+name: Redis client ci
+
+on:
+  push:
+    branches: [ $default-branch ]
+  pull_request:
+    branches: [ $default-branch ]
+
+jobs:
+  ubuntu:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: build
+        run: make build
+      - name: lint
+        run: make lint
+      - name: unittest
+        run: make test
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: build
+        run: make build
+      - name: lint
+        run: make lint
+      - name: unittest
+        run: make test
