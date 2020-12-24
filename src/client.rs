@@ -459,7 +459,8 @@ impl RedisClient {
         <bool>::deserialization(reply)
     }
 
-    /// Like TTL this command returns the remaining time to live of a key that has an expire set, with the sole difference that TTL returns the amount of remaining time in seconds while PTTL returns it in milliseconds.
+    /// Like TTL this command returns the remaining time to live of a key that has an expire set,
+    /// with the sole difference that TTL returns the amount of remaining time in seconds while PTTL returns it in milliseconds.
     ///
     /// Return value: Integer reply
     pub fn pttl<K>(&mut self, key: K) -> RedisResult<i64>
@@ -541,6 +542,21 @@ impl RedisClient {
         let cmd = command!("TYPE"; args => key);
         let reply = self.execute(cmd)?;
         <DataType>::deserialization(reply)
+    }
+
+    /// This command is very similar to DEL: it removes the specified keys.
+    ///
+    /// Return value: Integer reply
+    pub fn unlink<K>(&mut self, keys: Vec<K>) -> RedisResult<usize>
+    where
+        K: RedisSerializationProtocol,
+    {
+        let mut cmd = Command::new("UNLINK");
+        for key in keys {
+            cmd.arg(key);
+        }
+        let reply = self.execute(cmd)?;
+        <usize>::deserialization(reply)
     }
 
     // Strings commands

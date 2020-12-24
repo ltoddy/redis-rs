@@ -198,3 +198,16 @@ pub fn test_type() {
 
     client.flushall().unwrap();
 }
+
+#[test]
+pub fn test_unlink() {
+    let mut client = RedisClient::new().unwrap();
+
+    client.simple_set("key1", "Hello").unwrap();
+    client.simple_set("key2", "World").unwrap();
+
+    let amount = client.unlink(vec!["key1", "key2", "key3"]).unwrap();
+    assert_eq!(amount, 2);
+
+    client.flushall().unwrap();
+}

@@ -24,4 +24,6 @@ see more: https://redis.io/commands#generic
 - [ ] SORT key [BY pattern] [LIMIT offset count] [GET pattern [GET pattern ...]] [ASC|DESC] [ALPHA] [STORE destination]
 - [ ] TOUCH key [key ...]
 - [x] TTL key
-- [x] TYPE key
+- [x] TYPE ke
+- [x] UNLINK key [key ...]
+- [ ] WAIT numreplicas timeout
