@@ -2,6 +2,13 @@ use redisclient::client::ListBeforeOrAfter::Before;
 use redisclient::RedisClient;
 
 #[test]
+#[ignore]
+pub fn test_brpoplpush() {
+    let mut client = RedisClient::new().unwrap();
+    client.flushall().unwrap();
+}
+
+#[test]
 pub fn test_lindex() {
     let mut client = RedisClient::new().unwrap();
 
@@ -148,7 +155,20 @@ pub fn test_lset() {
 }
 
 #[test]
-pub fn rpop() {
+pub fn test_ltrim() {
+    let mut client = RedisClient::new().unwrap();
+
+    client.rpush("mylist", vec!["one", "two", "three"]).unwrap();
+    client.ltrim("mylist", 1, -1).unwrap();
+    let elements: Vec<String> = client.lrange("mylist", 0, -1).unwrap();
+
+    assert_eq!(elements, vec!["two".to_string(), "three".to_string()]);
+
+    client.flushall().unwrap();
+}
+
+#[test]
+pub fn test_rpop() {
     let mut client = RedisClient::new().unwrap();
 
     client.rpush("mylist", vec!["one", "two", "three"]).unwrap();
@@ -157,6 +177,52 @@ pub fn rpop() {
 
     let elements: Vec<String> = client.lrange("mylist", 0, -1).unwrap();
     assert_eq!(elements, vec!["one".to_string(), "two".to_string()]);
+
+    client.flushall().unwrap();
+}
+
+#[test]
+pub fn test_rpoplpush() {
+    let mut client = RedisClient::new().unwrap();
+
+    client.rpush("mylist", vec!["one", "two", "three"]).unwrap();
+    let element: String = client.rpoplpush("mylist", "myotherlist").unwrap();
+    assert_eq!(element, "three".to_string());
+
+    let elements: Vec<String> = client.lrange("mylist", 0, -1).unwrap();
+    assert_eq!(elements, vec!["one".to_string(), "two".to_string()]);
+
+    let elements: Vec<String> = client.lrange("myotherlist", 0, -1).unwrap();
+    assert_eq!(elements, vec!["three".to_string()]);
+
+    client.flushall().unwrap();
+}
+
+#[test]
+pub fn test_rpush() {
+    let mut client = RedisClient::new().unwrap();
+
+    client.rpush("mylist", vec!["Hello", "World"]).unwrap();
+    let elements: Vec<String> = client.lrange("mylist", 0, -1).unwrap();
+
+    assert_eq!(elements, vec!["Hello".to_string(), "World".to_string()]);
+
+    client.flushall().unwrap();
+}
+
+#[test]
+pub fn test_rpushx() {
+    let mut client = RedisClient::new().unwrap();
+
+    client.rpush("mylist", vec!["Hello"]).unwrap();
+    client.rpushx("mylist", vec!["World"]).unwrap();
+    client.rpushx("myotherlist", vec!["World"]).unwrap();
+
+    let elements: Vec<String> = client.lrange("mylist", 0, -1).unwrap();
+    assert_eq!(elements, vec!["Hello".to_string(), "World".to_string()]);
+
+    let elements: Vec<String> = client.lrange("myotherlist", 0, -1).unwrap();
+    assert!(elements.is_empty());
 
     client.flushall().unwrap();
 }
