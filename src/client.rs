@@ -565,6 +565,19 @@ impl RedisClient {
         <usize>::deserialization(reply)
     }
 
+    /// BRPOPLPUSH is the blocking variant of RPOPLPUSH.
+    ///
+    /// Return value: Bulk string reply
+    pub fn brpoplpush<K, E>(&mut self, source: K, destination: K, timeout: usize) -> RedisResult<E>
+    where
+        K: RedisSerializationProtocol,
+        E: RedisDeserializationProtocol,
+    {
+        let cmd = command!("BRPOPLPUSH"; args => source, destination, timeout);
+        let reply = self.execute(cmd)?;
+        <E>::deserialization(reply)
+    }
+
     // Lists commands
     /// Returns the element at index index in the list stored at key.
     ///
@@ -615,6 +628,11 @@ impl RedisClient {
         let cmd = command!("LPOP"; args => key);
         let reply = self.execute(cmd)?;
         <E>::deserialization(reply)
+    }
+
+    /// The command returns the index of matching elements inside a Redis list.
+    pub fn lpos(&mut self) {
+        todo!()
     }
 
     /// Insert all the specified values at the head of the list stored at key.
@@ -688,6 +706,18 @@ impl RedisClient {
         <()>::deserialization(reply)
     }
 
+    /// Trim an existing list so that it will contain only the specified range of elements specified.
+    ///
+    /// Return value: Simple string reply
+    pub fn ltrim<K>(&mut self, key: K, start: isize, stop: isize) -> RedisResult<()>
+    where
+        K: RedisSerializationProtocol,
+    {
+        let cmd = command!("LTRIM"; args => key, start, stop);
+        let reply = self.execute(cmd)?;
+        <()>::deserialization(reply)
+    }
+
     /// Removes and returns the last element of the list stored at key.
     ///
     /// Return value: Bulk string reply
@@ -701,6 +731,20 @@ impl RedisClient {
         <E>::deserialization(reply)
     }
 
+    /// Atomically returns and removes the last element (tail) of the list stored at source, and
+    /// pushes the element at the first element (head) of the list stored at destination.
+    ///
+    /// Return value: Bulk string reply
+    pub fn rpoplpush<K, E>(&mut self, source: K, destination: K) -> RedisResult<E>
+    where
+        K: RedisSerializationProtocol,
+        E: RedisDeserializationProtocol,
+    {
+        let cmd = command!("RPOPLPUSH"; args => source, destination);
+        let reply = self.execute(cmd)?;
+        <E>::deserialization(reply)
+    }
+
     /// Insert all the specified values at the tail of the list stored at key.
     ///
     /// Return value: Integer value
@@ -710,6 +754,22 @@ impl RedisClient {
         E: RedisSerializationProtocol,
     {
         let mut cmd = command!("RPUSH"; args => key);
+        for element in elements {
+            cmd.arg(element);
+        }
+        let reply = self.execute(cmd)?;
+        <usize>::deserialization(reply)
+    }
+
+    /// Inserts specified values at the tail of the list stored at key, only if key already exists and holds a list.
+    ///
+    /// Return value: Integer reply
+    pub fn rpushx<K, E>(&mut self, key: K, elements: Vec<E>) -> RedisResult<usize>
+    where
+        K: RedisSerializationProtocol,
+        E: RedisSerializationProtocol,
+    {
+        let mut cmd = command!("RPUSHX"; args => key);
         for element in elements {
             cmd.arg(element);
         }

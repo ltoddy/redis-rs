@@ -1,6 +1,8 @@
 redis-rs
 ========
 
+![Redis client ci](https://github.com/ltoddy/redis-rs/workflows/Redis%20client%20ci/badge.svg)
+
 Redis client for Rust.
 
 - Pure Rust, and doesn't depend on any 3rd party libraries
