@@ -4,6 +4,8 @@ use crate::error::{ErrorKind, RedisError};
 use crate::pool::ConnectionPool;
 use crate::protocol::{RedisDeserializationProtocol, RedisSerializationProtocol};
 use crate::{DataType, RedisResult};
+use std::collections::HashSet;
+use std::hash::Hash;
 
 struct Command {
     cmd: String,
@@ -775,6 +777,36 @@ impl RedisClient {
         }
         let reply = self.execute(cmd)?;
         <usize>::deserialization(reply)
+    }
+
+    // Sets commands
+    /// Add the specified members to the set stored at key.
+    ///
+    /// Return value: Integer value
+    pub fn sadd<K, M>(&mut self, key: K, members: Vec<M>) -> RedisResult<usize>
+    where
+        K: RedisSerializationProtocol,
+        M: RedisSerializationProtocol + Hash + Eq,
+    {
+        let mut cmd = command!("SADD"; args => key);
+        for memeber in members {
+            cmd.arg(memeber);
+        }
+        let reply = self.execute(cmd)?;
+        <usize>::deserialization(reply)
+    }
+
+    /// Returns all the members of the set value stored at key.
+    ///
+    /// Return value: Array reply
+    pub fn smembers<K, M>(&mut self, key: K) -> RedisResult<HashSet<M>>
+    where
+        K: RedisSerializationProtocol,
+        M: RedisSerializationProtocol + Hash + Eq,
+    {
+        let cmd = command!("SMEMBERS"; args => key);
+        let reply = self.execute(cmd)?;
+        Ok(<HashSet<M>>::new())
     }
 
     // Strings commands
