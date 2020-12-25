@@ -142,6 +142,34 @@ macro_rules! implement_deserialization_for_maps {
     };
 }
 
+//             impl RedisSerializationProtocol for $t {
+//                 fn serialization(&self) -> Vec<u8> {
+//                     let length = self.len();
+//                     let mut buf = Vec::new();
+//                     buf.extend(b"*1\r\n");
+//                     buf.extend(format!("${}\r\n", length).as_bytes());
+//                     buf.extend(self);
+//                     buf.extend(b"\r\n");
+//                     buf
+//                 }
+//             }
+
+impl<T> RedisSerializationProtocol for std::collections::HashSet<T>
+where
+    T: RedisSerializationProtocol + Hash + Eq,
+{
+    fn serialization(&self) -> Vec<u8> {
+        let size = self.len();
+        let mut buf = Vec::new();
+        buf.extend(b"*1\r\n");
+        buf.extend(format!("${}\r\n", size).as_bytes());
+        for member in self {
+            buf.extend(member.serialization());
+        }
+        buf
+    }
+}
+
 impl<T> RedisDeserializationProtocol for std::collections::HashSet<T>
 where
     T: RedisDeserializationProtocol + Hash + Eq,

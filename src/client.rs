@@ -1,11 +1,12 @@
+use std::collections::HashSet;
+use std::hash::Hash;
+
 use crate::config::RedisConfig;
 use crate::connection::Reply;
 use crate::error::{ErrorKind, RedisError};
 use crate::pool::ConnectionPool;
 use crate::protocol::{RedisDeserializationProtocol, RedisSerializationProtocol};
 use crate::{DataType, RedisResult};
-use std::collections::HashSet;
-use std::hash::Hash;
 
 struct Command {
     cmd: String,
@@ -783,7 +784,7 @@ impl RedisClient {
     /// Add the specified members to the set stored at key.
     ///
     /// Return value: Integer value
-    pub fn sadd<K, M>(&mut self, key: K, members: Vec<M>) -> RedisResult<usize>
+    pub fn sadd<K, M>(&mut self, key: K, members: HashSet<M>) -> RedisResult<usize>
     where
         K: RedisSerializationProtocol,
         M: RedisSerializationProtocol + Hash + Eq,
@@ -796,17 +797,91 @@ impl RedisClient {
         <usize>::deserialization(reply)
     }
 
+    /// Returns the set cardinality (number of elements) of the set stored at key.
+    ///
+    /// Return value: Integer reply
+    pub fn scard<K>(&mut self, key: K) -> RedisResult<usize>
+    where
+        K: RedisSerializationProtocol,
+    {
+        let cmd = command!("SCARD"; args => key);
+        let reply = self.execute(cmd)?;
+        <usize>::deserialization(reply)
+    }
+
+    /// Returns the members of the set resulting from the difference between the first set and all the successive sets.
+    ///
+    /// Return value: Array reply
+    pub fn sdiff<K, M>(&mut self, keys: Vec<K>) -> RedisResult<HashSet<M>>
+    where
+        K: RedisSerializationProtocol,
+        M: RedisDeserializationProtocol + Hash + Eq,
+    {
+        let mut cmd = Command::new("SDIFF");
+        for key in keys {
+            cmd.arg(key);
+        }
+        let reply = self.execute(cmd)?;
+        <HashSet<M>>::deserialization(reply)
+    }
+
     /// Returns all the members of the set value stored at key.
     ///
     /// Return value: Array reply
     pub fn smembers<K, M>(&mut self, key: K) -> RedisResult<HashSet<M>>
     where
         K: RedisSerializationProtocol,
-        M: RedisSerializationProtocol + Hash + Eq,
+        M: RedisDeserializationProtocol + Hash + Eq,
     {
         let cmd = command!("SMEMBERS"; args => key);
         let reply = self.execute(cmd)?;
-        Ok(<HashSet<M>>::new())
+        <HashSet<M>>::deserialization(reply)
+    }
+
+    /// This command is equal to SDIFF, but instead of returning the resulting set, it is stored in destination.
+    ///
+    /// Return value: Integer reply
+    pub fn sdiffstore<K>(&mut self, destination: K, keys: Vec<K>) -> RedisResult<usize>
+    where
+        K: RedisSerializationProtocol + Hash + Eq,
+    {
+        let mut cmd = command!("SDIFFSTORE"; args => destination);
+        for key in keys {
+            cmd.arg(key);
+        }
+        let reply = self.execute(cmd)?;
+        <usize>::deserialization(reply)
+    }
+
+    /// Returns the members of the set resulting from the intersection of all the given sets.
+    ///
+    /// Return value: Array reply
+    pub fn sinter<K, M>(&mut self, keys: Vec<K>) -> RedisResult<HashSet<M>>
+    where
+        K: RedisSerializationProtocol,
+        M: RedisDeserializationProtocol + Hash + Eq,
+    {
+        let mut cmd = Command::new("SINTER");
+        for key in keys {
+            cmd.arg(key);
+        }
+        let reply = self.execute(cmd)?;
+        <HashSet<M>>::deserialization(reply)
+    }
+
+    /// This command is equal to SINTER, but instead of returning the resulting set, it is stored in destination.
+    ///
+    /// Return value: Integer reply
+    pub fn sinterstore<K>(&mut self, destination: K, keys: Vec<K>) -> RedisResult<usize>
+    where
+        K: RedisSerializationProtocol,
+    {
+        let mut cmd = command!("SINTERSTORE"; args => destination);
+        for key in keys {
+            cmd.arg(key);
+        }
+        let reply = self.execute(cmd)?;
+        <usize>::deserialization(reply)
     }
 
     // Strings commands
