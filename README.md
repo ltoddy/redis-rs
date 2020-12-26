@@ -20,7 +20,7 @@ version = "*"
 extern crate redisclient;
 
 use redisclient::RedisResult;
-use redisclient::client::RedisClient;
+use redisclient::RedisClient;
 
 fn main() {
     if let Err(e) = run() {

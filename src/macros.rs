@@ -3,7 +3,6 @@ macro_rules! hash_map {
     () => { std::collections::HashMap::with_capacity(16) };
 
     ($key: expr => $value: expr) => {
-        // follow Java's HashMap.
         hash_map!($key => $value; 16)
     };
     ($key: expr => $value: expr; $init_capacity: expr) => {
@@ -57,5 +56,22 @@ macro_rules! hash_set {
 
     ($($elements: expr,)*) => {
         hash_set!($($elements),*)
+    };
+}
+
+#[macro_export]
+macro_rules! btree_set {
+    () => { std::collections::BTreeSet::new() };
+
+    ($($elements: expr),*) => {
+        {
+            let mut set = btree_set!();
+            $(set.insert($elements);)*
+            set
+        }
+    };
+
+    ($($elements: expr,)*) => {
+        btree_set!($($elements),*)
     };
 }
