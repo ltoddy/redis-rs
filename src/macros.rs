@@ -42,3 +42,20 @@ macro_rules! btree_map {
         btree_map!($($key => $value),*)
     };
 }
+
+#[macro_export]
+macro_rules! hash_set {
+    () => { std::collections::HashSet::new() };
+
+    ($($elements: expr),*) => {
+        {
+            let mut set = hash_set!();
+            $(set.insert($elements);)*
+            set
+        }
+    };
+
+    ($($elements: expr,)*) => {
+        hash_set!($($elements),*)
+    };
+}
