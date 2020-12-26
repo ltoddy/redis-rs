@@ -825,19 +825,6 @@ impl RedisClient {
         <HashSet<M>>::deserialization(reply)
     }
 
-    /// Returns all the members of the set value stored at key.
-    ///
-    /// Return value: Array reply
-    pub fn smembers<K, M>(&mut self, key: K) -> RedisResult<HashSet<M>>
-    where
-        K: RedisSerializationProtocol,
-        M: RedisDeserializationProtocol + Hash + Eq,
-    {
-        let cmd = command!("SMEMBERS"; args => key);
-        let reply = self.execute(cmd)?;
-        <HashSet<M>>::deserialization(reply)
-    }
-
     /// This command is equal to SDIFF, but instead of returning the resulting set, it is stored in destination.
     ///
     /// Return value: Integer reply
@@ -877,6 +864,145 @@ impl RedisClient {
         K: RedisSerializationProtocol,
     {
         let mut cmd = command!("SINTERSTORE"; args => destination);
+        for key in keys {
+            cmd.arg(key);
+        }
+        let reply = self.execute(cmd)?;
+        <usize>::deserialization(reply)
+    }
+
+    /// Returns if member is a member of the set stored at key.
+    ///
+    /// Return value: Integer reply
+    pub fn sismember<K, M>(&mut self, key: K, member: M) -> RedisResult<bool>
+    where
+        K: RedisSerializationProtocol,
+        M: RedisSerializationProtocol + Hash + Eq,
+    {
+        let cmd = command!("SISMEMBER"; args => key, member);
+        let reply = self.execute(cmd)?;
+        <bool>::deserialization(reply)
+    }
+
+    /// Returns all the members of the set value stored at key.
+    ///
+    /// Return value: Array reply
+    pub fn smembers<K, M>(&mut self, key: K) -> RedisResult<HashSet<M>>
+    where
+        K: RedisSerializationProtocol,
+        M: RedisDeserializationProtocol + Hash + Eq,
+    {
+        let cmd = command!("SMEMBERS"; args => key);
+        let reply = self.execute(cmd)?;
+        <HashSet<M>>::deserialization(reply)
+    }
+
+    /// Returns whether each member is a member of the set stored at key.
+    ///
+    /// Return value: Array reply
+    pub fn smismember<K, M>(&mut self, key: K, members: HashSet<M>) -> RedisResult<Vec<bool>>
+    where
+        K: RedisSerializationProtocol,
+        M: RedisSerializationProtocol + Hash + Eq,
+    {
+        let mut cmd = command!("SMISMEMBER"; args => key);
+        for member in members {
+            cmd.arg(member);
+        }
+        let reply = self.execute(cmd)?;
+        <Vec<bool>>::deserialization(reply)
+    }
+
+    /// Move member from the set at source to the set at destination.
+    ///
+    /// Return value: Integer reply
+    pub fn smove<K, M>(&mut self, source: K, destination: K, member: M) -> RedisResult<usize>
+    where
+        K: RedisSerializationProtocol,
+        M: RedisSerializationProtocol + Hash + Eq,
+    {
+        let cmd = command!("SMOVE"; args => source, destination, member);
+        let reply = self.execute(cmd)?;
+        <usize>::deserialization(reply)
+    }
+
+    /// Removes and returns one or more random members from the set value store at key.
+    ///
+    /// Return value: Bulk string reply or Array reply
+    pub fn spop<K, M>(&mut self, key: K, count: Option<usize>) -> RedisResult<M>
+    where
+        K: RedisSerializationProtocol,
+        M: RedisDeserializationProtocol,
+    {
+        let mut cmd = command!("SPOP"; args => key);
+        if let Some(count) = count {
+            cmd.arg(count);
+        }
+        let reply = self.execute(cmd)?;
+        <M>::deserialization(reply)
+    }
+
+    /// When called with just the key argument, return a random element from the set value stored at key.
+    ///
+    /// Return value: Bulk string reply or Array reply
+    pub fn srandmember<K, M>(&mut self, key: K, count: Option<usize>) -> RedisResult<M>
+    where
+        K: RedisSerializationProtocol,
+        M: RedisDeserializationProtocol,
+    {
+        let mut cmd = command!("SPOP"; args => key);
+        if let Some(count) = count {
+            cmd.arg(count);
+        }
+        let reply = self.execute(cmd)?;
+        <M>::deserialization(reply)
+    }
+
+    /// Remove the specified members from the set stored at key.
+    ///
+    /// Return value: Integer reply
+    pub fn srem<K, M>(&mut self, key: K, members: HashSet<M>) -> RedisResult<usize>
+    where
+        K: RedisSerializationProtocol,
+        M: RedisSerializationProtocol + Hash + Eq,
+    {
+        let mut cmd = command!("SREM"; args => key);
+        for member in members {
+            cmd.arg(member);
+        }
+        let reply = self.execute(cmd)?;
+        <usize>::deserialization(reply)
+    }
+
+    /// Like Scan command
+    pub fn sscan() {
+        todo!()
+    }
+
+    /// Returns the members of the set resulting from the union of all the given sets.
+    ///
+    /// Return value: Array reply
+    pub fn sunion<K, M>(&mut self, keys: Vec<K>) -> RedisResult<HashSet<M>>
+    where
+        K: RedisSerializationProtocol,
+        M: RedisDeserializationProtocol + Hash + Eq,
+    {
+        let mut cmd = Command::new("SUNION");
+        for key in keys {
+            cmd.arg(key);
+        }
+        let reply = self.execute(cmd)?;
+        <HashSet<M>>::deserialization(reply)
+    }
+
+    /// This command is equal to SUNION, but instead of returning the resulting set, it is stored in destination.
+    ///
+    /// Return value: Integer reply
+    pub fn sunionstore<K>(&mut self, destination: K, keys: Vec<K>) -> RedisResult<usize>
+    where
+        K: RedisSerializationProtocol,
+    {
+        let mut cmd = command!("SUNIONSTORE"; args => destination);
         for key in keys {
             cmd.arg(key);
         }
