@@ -1,12 +1,11 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::hash::Hash;
 
-use crate::DataType;
-
 use crate::client::ListBeforeOrAfter;
 use crate::connection::{Reply, SingleStrings};
 use crate::error::ErrorKind::{ResponseError, TypeError};
 use crate::error::RedisError;
+use crate::DataType;
 use crate::RedisResult;
 
 pub trait RedisSerializationProtocol {

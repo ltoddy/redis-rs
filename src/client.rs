@@ -1010,6 +1010,8 @@ impl RedisClient {
         <usize>::deserialization(reply)
     }
 
+    // Sorted Sets commands
+
     // Strings commands
     pub fn append<K, V>(&mut self, key: K, value: V) -> RedisResult<u64>
     where
