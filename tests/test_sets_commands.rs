@@ -4,7 +4,7 @@ use redisclient::hash_set;
 use redisclient::RedisClient;
 
 #[test]
-pub fn set_sadd() {
+pub fn test_sadd() {
     let mut client = RedisClient::new().unwrap();
 
     client.sadd("myset", hash_set!["Hello", "World", "World"]).unwrap();
@@ -52,7 +52,7 @@ pub fn test_sdiffstore() {
 }
 
 #[test]
-pub fn sinter() {
+pub fn test_sinter() {
     let mut client = RedisClient::new().unwrap();
 
     client.sadd("key1", hash_set!("a", "b", "c")).unwrap();

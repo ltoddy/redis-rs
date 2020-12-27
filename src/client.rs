@@ -790,8 +790,8 @@ impl RedisClient {
         M: RedisSerializationProtocol + Hash + Eq,
     {
         let mut cmd = command!("SADD"; args => key);
-        for memeber in members {
-            cmd.arg(memeber);
+        for member in members {
+            cmd.arg(member);
         }
         let reply = self.execute(cmd)?;
         <usize>::deserialization(reply)
@@ -1011,6 +1011,23 @@ impl RedisClient {
     }
 
     // Sorted Sets commands
+    // TODO: design data structure
+    /// Adds all the specified members with the specified scores to the sorted set stored at key.
+    ///
+    /// Return value: Integer reply
+    pub fn zadd<K, M>(&mut self, key: K, paris: Vec<(isize, M)>) -> RedisResult<usize>
+    // TODO: refactor parameters
+    where
+        K: RedisSerializationProtocol,
+        M: RedisSerializationProtocol,
+    {
+        let mut cmd = command!("ZADD"; args => key);
+        for (score, member) in paris {
+            cmd.arg(score).arg(member);
+        }
+        let reply = self.execute(cmd)?;
+        <usize>::deserialization(reply)
+    }
 
     // Strings commands
     pub fn append<K, V>(&mut self, key: K, value: V) -> RedisResult<u64>
