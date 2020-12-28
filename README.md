@@ -2,6 +2,8 @@ redis-rs
 ========
 
 ![ci](https://github.com/ltoddy/redis-rs/workflows/ci/badge.svg)
+![latest version](https://img.shields.io/crates/v/redisclient.svg)
+![doc](https://docs.rs/redisclient/badge.svg)
 
 Redis client for Rust.
 
