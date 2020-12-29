@@ -37,6 +37,7 @@ pub mod config;
 pub mod connection;
 pub mod error;
 pub mod macros;
+pub mod pipeline;
 pub mod pool;
 pub mod protocol;
 

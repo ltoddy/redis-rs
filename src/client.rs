@@ -4,11 +4,12 @@ use std::hash::Hash;
 use crate::config::RedisConfig;
 use crate::connection::Reply;
 use crate::error::{ErrorKind, RedisError};
+use crate::pipeline::Pipeline;
 use crate::pool::ConnectionPool;
 use crate::protocol::{RedisDeserializationProtocol, RedisSerializationProtocol};
 use crate::{DataType, RedisResult};
 
-struct Command {
+pub struct Command {
     cmd: String,
     args: Vec<u8>,
     count: usize,
@@ -87,6 +88,10 @@ impl RedisClient {
         }
 
         Ok(client)
+    }
+
+    pub fn pipe(&self) -> Pipeline {
+        Pipeline::new(self)
     }
 
     // TODO
