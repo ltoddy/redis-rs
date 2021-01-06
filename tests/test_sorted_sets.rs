@@ -21,3 +21,23 @@ pub fn test_zcard() {
 
     client.flushall().unwrap();
 }
+
+#[test]
+pub fn test_zcount() {
+    let mut client = RedisClient::new().unwrap();
+
+    assert_eq!(
+        client
+            .zadd("myzset", vec![(1, "one"), (2, "two"), (3, "three")])
+            .unwrap(),
+        3
+    );
+
+    assert_eq!(
+        client.zcount("myzset", isize::min_value(), isize::max_value()).unwrap(),
+        3
+    );
+    assert_eq!(client.zcount("myzset", 2, 3).unwrap(), 2);
+
+    client.flushall().unwrap();
+}

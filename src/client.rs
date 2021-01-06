@@ -1049,6 +1049,18 @@ impl RedisClient {
         <usize>::deserialization(reply)
     }
 
+    /// Returns the number of elements in the sorted set at key with a score between min and max.
+    ///
+    /// Return value: Integer reply
+    pub fn zcount<K>(&mut self, key: K, min: isize, max: isize) -> RedisResult<usize>
+    where
+        K: RedisSerializationProtocol,
+    {
+        let cmd = command!("ZCOUNT"; args => key, min, max);
+        let reply = self.execute(cmd)?;
+        <usize>::deserialization(reply)
+    }
+
     // Strings commands
     pub fn append<K, V>(&mut self, key: K, value: V) -> RedisResult<u64>
     where
