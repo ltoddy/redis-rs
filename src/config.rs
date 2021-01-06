@@ -2,6 +2,8 @@ pub trait ToRedisConnectionConfig {
     fn to_redis_connection_config(&self) -> RedisConfig;
 }
 
+// TODO: impl TORedisConnectionConfig for String, &str and so on.
+
 pub struct RedisConfig {
     pub address: String,
     pub database: u8,

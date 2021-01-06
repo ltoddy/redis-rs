@@ -94,6 +94,10 @@ impl RedisClient {
         Pipeline::new(self)
     }
 
+    pub fn pipe_with_capacity(&self, capacity: usize) -> Pipeline {
+        Pipeline::with_capacity(self, capacity)
+    }
+
     // TODO
     pub fn flushall(&mut self) -> RedisResult<()> {
         let cmd = Command::new("FLUSHALL");

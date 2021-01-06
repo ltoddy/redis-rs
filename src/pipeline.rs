@@ -9,11 +9,11 @@ pub struct Pipeline<'a> {
 }
 
 impl<'a> Pipeline<'a> {
-    pub fn new(client: &RedisClient) -> Pipeline {
+    pub(crate) fn new(client: &RedisClient) -> Pipeline {
         Self::with_capacity(client, 0)
     }
 
-    pub fn with_capacity(client: &RedisClient, capacity: usize) -> Pipeline {
+    pub(crate) fn with_capacity(client: &RedisClient, capacity: usize) -> Pipeline {
         Pipeline {
             client,
             commands: Vec::with_capacity(capacity),
