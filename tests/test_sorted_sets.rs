@@ -11,3 +11,13 @@ pub fn test_zadd() {
 
     client.flushall().unwrap();
 }
+
+#[test]
+pub fn test_zcard() {
+    let mut client = RedisClient::new().unwrap();
+
+    assert_eq!(client.zadd("myzset", vec![(1, "one"), (2, "two")]).unwrap(), 2);
+    assert_eq!(client.zcard("myzset").unwrap(), 2);
+
+    client.flushall().unwrap();
+}

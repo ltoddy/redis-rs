@@ -1025,7 +1025,6 @@ impl RedisClient {
     ///
     /// Return value: Integer reply
     pub fn zadd<K, M>(&mut self, key: K, paris: Vec<(isize, M)>) -> RedisResult<usize>
-    // TODO: refactor parameters
     where
         K: RedisSerializationProtocol,
         M: RedisSerializationProtocol,
@@ -1034,6 +1033,18 @@ impl RedisClient {
         for (score, member) in paris {
             cmd.arg(score).arg(member);
         }
+        let reply = self.execute(cmd)?;
+        <usize>::deserialization(reply)
+    }
+
+    /// Returns the sorted set cardinality (number of elements) of the sorted set stored at key.
+    ///
+    /// Return value: Integer reply
+    pub fn zcard<K>(&mut self, key: K) -> RedisResult<usize>
+    where
+        K: RedisSerializationProtocol,
+    {
+        let cmd = command!("ZCARD"; args => key);
         let reply = self.execute(cmd)?;
         <usize>::deserialization(reply)
     }
